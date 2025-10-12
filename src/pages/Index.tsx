@@ -8,7 +8,6 @@ interface Selection {
   productTypes: string[];
   colorSchemes: string[];
   designConcepts: string[];
-  materials: string[];
 }
 
 const Index = () => {
@@ -17,7 +16,6 @@ const Index = () => {
     productTypes: [],
     colorSchemes: [],
     designConcepts: [],
-    materials: [],
   });
 
   const toggleSelection = (category: keyof Selection, value: string) => {
@@ -35,7 +33,6 @@ const Index = () => {
       productTypes: [],
       colorSchemes: [],
       designConcepts: [],
-      materials: [],
     });
   };
 
@@ -106,14 +103,6 @@ const Index = () => {
     { id: "abstract", name: "Abstract", desc: "Artistic freedom" },
   ];
 
-  const materialOptions = [
-    { id: "wood", name: "Wood", desc: "Natural warmth" },
-    { id: "ceramic", name: "Ceramic", desc: "Classic finish" },
-    { id: "metal", name: "Metal", desc: "Modern shine" },
-    { id: "glass", name: "Glass", desc: "Elegant clarity" },
-    { id: "fabric", name: "Fabric", desc: "Soft texture" },
-    { id: "paper", name: "Paper", desc: "Eco-friendly" },
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -178,16 +167,6 @@ const Index = () => {
                   <span className="font-medium text-sm text-muted-foreground">Design Style:</span>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {selections.designConcepts.map((item) => (
-                      <Badge key={item} variant="secondary">{item}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {selections.materials.length > 0 && (
-                <div>
-                  <span className="font-medium text-sm text-muted-foreground">Materials:</span>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {selections.materials.map((item) => (
                       <Badge key={item} variant="secondary">{item}</Badge>
                     ))}
                   </div>
@@ -316,37 +295,18 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Material Section */}
-        <section className="mb-12">
-          <div className="mb-6">
-            <h2 className="text-3xl font-bold mb-2">Select Materials</h2>
-            <p className="text-muted-foreground">Choose your preferred materials (optional)</p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {materialOptions.map((option) => (
-              <Card
-                key={option.id}
-                className={`p-6 cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
-                  selections.materials.includes(option.name)
-                    ? "border-primary border-2 bg-primary/5"
-                    : "hover:border-primary/50"
-                }`}
-                onClick={() => toggleSelection("materials", option.name)}
-              >
-                <div className="text-center">
-                  <h3 className="font-semibold mb-1">{option.name}</h3>
-                  <p className="text-sm text-muted-foreground">{option.desc}</p>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </section>
 
         {/* Footer */}
         {hasSelections && (
-          <div className="text-center">
+          <div className="flex justify-center gap-4 flex-wrap">
             <Button size="lg" className="bg-gradient-to-r from-primary to-secondary hover:opacity-90">
-              Generate Design Ideas
+              Generate PNG on Transparent Background
+            </Button>
+            <Button size="lg" variant="outline">
+              Generate Listing
+            </Button>
+            <Button size="lg" variant="secondary">
+              Export Full Listing
             </Button>
           </div>
         )}
