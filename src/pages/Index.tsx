@@ -3,6 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Selection {
   inspirations: string[];
@@ -18,6 +20,11 @@ const Index = () => {
     colorSchemes: [],
     designConcepts: [],
   });
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [generatedListing, setGeneratedListing] = useState<any>(null);
+  const [showImageDialog, setShowImageDialog] = useState(false);
+  const [showListingDialog, setShowListingDialog] = useState(false);
 
   const toggleSelection = (category: keyof Selection, value: string) => {
     setSelections((prev) => ({
@@ -104,19 +111,51 @@ const Index = () => {
     { id: "abstract", name: "Abstract", desc: "Artistic freedom" },
   ];
 
-  const handleGeneratePNG = () => {
-    toast.success("Generating PNG on transparent background...");
-    // TODO: Implement AI image generation
+  const handleGeneratePNG = async () => {
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-design-png", {
+        body: { selections },
+      });
+
+      if (error) throw error;
+
+      setGeneratedImage(data.imageUrl);
+      setShowImageDialog(true);
+      toast.success("PNG generated successfully!");
+    } catch (error: any) {
+      console.error("Error generating PNG:", error);
+      toast.error(error.message || "Failed to generate PNG");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
-  const handleGenerateListing = () => {
-    toast.success("Generating product listing...");
-    // TODO: Implement AI listing generation
+  const handleGenerateListing = async () => {
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-listing", {
+        body: { selections },
+      });
+
+      if (error) throw error;
+
+      setGeneratedListing(data.listing);
+      setShowListingDialog(true);
+      toast.success("Listing generated successfully!");
+    } catch (error: any) {
+      console.error("Error generating listing:", error);
+      toast.error(error.message || "Failed to generate listing");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleExportListing = () => {
     const exportData = {
       ...selections,
+      generatedImage,
+      generatedListing,
       timestamp: new Date().toISOString(),
     };
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -127,6 +166,14 @@ const Index = () => {
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Listing exported successfully!");
+  };
+
+  const downloadImage = () => {
+    if (!generatedImage) return;
+    const a = document.createElement('a');
+    a.href = generatedImage;
+    a.download = `design-${Date.now()}.png`;
+    a.click();
   };
 
 
@@ -326,17 +373,105 @@ const Index = () => {
         {/* Footer */}
         {hasSelections && (
           <div className="flex justify-center gap-4 flex-wrap">
-            <Button size="lg" className="bg-gradient-to-r from-primary to-secondary hover:opacity-90" onClick={handleGeneratePNG}>
-              Generate PNG on Transparent Background
+            <Button 
+              size="lg" 
+              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90" 
+              onClick={handleGeneratePNG}
+              disabled={isGenerating}
+            >
+              {isGenerating ? "Generating..." : "Generate PNG on Transparent Background"}
             </Button>
-            <Button size="lg" variant="outline" onClick={handleGenerateListing}>
-              Generate Listing
+            <Button 
+              size="lg" 
+              variant="outline" 
+              onClick={handleGenerateListing}
+              disabled={isGenerating}
+            >
+              {isGenerating ? "Generating..." : "Generate Listing"}
             </Button>
-            <Button size="lg" variant="secondary" onClick={handleExportListing}>
+            <Button 
+              size="lg" 
+              variant="secondary" 
+              onClick={handleExportListing}
+            >
               Export Full Listing
             </Button>
           </div>
         )}
+
+        {/* Image Dialog */}
+        <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Generated Design</DialogTitle>
+            </DialogHeader>
+            {generatedImage && (
+              <div className="space-y-4">
+                <img src={generatedImage} alt="Generated design" className="w-full rounded-lg" />
+                <Button onClick={downloadImage} className="w-full">
+                  Download PNG
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Listing Dialog */}
+        <Dialog open={showListingDialog} onOpenChange={setShowListingDialog}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Generated Product Listing</DialogTitle>
+            </DialogHeader>
+            {generatedListing && (
+              <div className="space-y-4">
+                {generatedListing.title && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Title:</h3>
+                    <p>{generatedListing.title}</p>
+                  </div>
+                )}
+                {generatedListing.description && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Description:</h3>
+                    <p className="text-sm text-muted-foreground">{generatedListing.description}</p>
+                  </div>
+                )}
+                {generatedListing.features && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Features:</h3>
+                    <ul className="list-disc list-inside space-y-1 text-sm">
+                      {generatedListing.features.map((feature: string, i: number) => (
+                        <li key={i}>{feature}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {generatedListing.tags && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Tags:</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {generatedListing.tags.map((tag: string, i: number) => (
+                        <Badge key={i} variant="secondary">{tag}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {generatedListing.priceRange && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Price Range:</h3>
+                    <p className="text-sm">{generatedListing.priceRange}</p>
+                  </div>
+                )}
+                {generatedListing.rawContent && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Content:</h3>
+                    <p className="text-sm whitespace-pre-wrap">{generatedListing.rawContent}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
