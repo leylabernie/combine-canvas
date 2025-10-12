@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface Selection {
   inspirations: string[];
@@ -102,6 +103,32 @@ const Index = () => {
     { id: "geometric", name: "Geometric", desc: "Clean patterns" },
     { id: "abstract", name: "Abstract", desc: "Artistic freedom" },
   ];
+
+  const handleGeneratePNG = () => {
+    toast.success("Generating PNG on transparent background...");
+    // TODO: Implement AI image generation
+  };
+
+  const handleGenerateListing = () => {
+    toast.success("Generating product listing...");
+    // TODO: Implement AI listing generation
+  };
+
+  const handleExportListing = () => {
+    const exportData = {
+      ...selections,
+      timestamp: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `design-listing-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Listing exported successfully!");
+  };
+
 
 
   return (
@@ -299,13 +326,13 @@ const Index = () => {
         {/* Footer */}
         {hasSelections && (
           <div className="flex justify-center gap-4 flex-wrap">
-            <Button size="lg" className="bg-gradient-to-r from-primary to-secondary hover:opacity-90">
+            <Button size="lg" className="bg-gradient-to-r from-primary to-secondary hover:opacity-90" onClick={handleGeneratePNG}>
               Generate PNG on Transparent Background
             </Button>
-            <Button size="lg" variant="outline">
+            <Button size="lg" variant="outline" onClick={handleGenerateListing}>
               Generate Listing
             </Button>
-            <Button size="lg" variant="secondary">
+            <Button size="lg" variant="secondary" onClick={handleExportListing}>
               Export Full Listing
             </Button>
           </div>
