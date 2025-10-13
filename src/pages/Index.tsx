@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { removeBackground, loadImage } from "@/utils/backgroundRemoval";
 
 interface Selection {
   inspirations: string[];
@@ -113,9 +112,14 @@ const Index = () => {
   ];
 
   const handleGeneratePNG = async () => {
+    if (!hasSelections) {
+      toast.error("Please make at least one selection");
+      return;
+    }
+
     setIsGenerating(true);
     try {
-      toast.info("Generating design image...");
+      toast.info("Generating transparent design image...");
       
       const { data, error } = await supabase.functions.invoke("generate-design-png", {
         body: { selections },
@@ -123,19 +127,11 @@ const Index = () => {
 
       if (error) throw error;
 
-      // Load the generated image
-      toast.info("Removing background...");
-      const response = await fetch(data.imageUrl);
-      const blob = await response.blob();
-      const imageElement = await loadImage(blob);
-      
-      // Remove background
-      const transparentBlob = await removeBackground(imageElement);
-      const transparentUrl = URL.createObjectURL(transparentBlob);
-      
-      setGeneratedImage(transparentUrl);
-      setShowImageDialog(true);
-      toast.success("PNG with transparent background generated!");
+      if (data?.imageUrl) {
+        setGeneratedImage(data.imageUrl);
+        setShowImageDialog(true);
+        toast.success("PNG with transparent background generated!");
+      }
     } catch (error: any) {
       console.error("Error generating PNG:", error);
       toast.error(error.message || "Failed to generate PNG");
