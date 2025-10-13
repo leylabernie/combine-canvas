@@ -14,15 +14,6 @@ interface Selection {
   designConcepts: string[];
 }
 
-interface GeneratedListing {
-  title?: string;
-  description?: string;
-  features?: string[];
-  tags?: string[];
-  priceRange?: string;
-  rawContent?: string;
-}
-
 const Index = () => {
   const [selections, setSelections] = useState<Selection>({
     inspirations: [],
@@ -32,7 +23,7 @@ const Index = () => {
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const [generatedListing, setGeneratedListing] = useState<GeneratedListing | null>(null);
+  const [generatedListing, setGeneratedListing] = useState<any>(null);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [showListingDialog, setShowListingDialog] = useState(false);
 
@@ -145,9 +136,9 @@ const Index = () => {
       setGeneratedImage(transparentUrl);
       setShowImageDialog(true);
       toast.success("PNG with transparent background generated!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating PNG:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to generate PNG");
+      toast.error(error.message || "Failed to generate PNG");
     } finally {
       setIsGenerating(false);
     }
@@ -165,9 +156,9 @@ const Index = () => {
       setGeneratedListing(data.listing);
       setShowListingDialog(true);
       toast.success("Listing generated successfully!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating listing:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to generate listing");
+      toast.error(error.message || "Failed to generate listing");
     } finally {
       setIsGenerating(false);
     }
