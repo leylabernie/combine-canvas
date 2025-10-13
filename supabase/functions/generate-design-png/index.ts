@@ -77,10 +77,13 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    console.log("AI gateway response:", JSON.stringify(data));
+    
     const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
     if (!imageUrl) {
-      throw new Error("No image generated");
+      console.error("No image in response. Full response:", JSON.stringify(data));
+      throw new Error("No image generated. The AI model may not have returned an image.");
     }
 
     console.log("Image generated successfully");
