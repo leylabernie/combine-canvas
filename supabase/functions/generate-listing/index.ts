@@ -26,21 +26,21 @@ serve(async (req) => {
       styles: selections.designConcepts || [],
     };
 
-    const prompt = `You are a professional product listing writer. Create a compelling, SEO-optimized product listing based on these design elements:
+    const prompt = `You are a professional product listing writer. Create an SEO-optimized product listing based on these design elements:
 
 Inspirations: ${context.inspirations.join(", ") || "None"}
 Product Types: ${context.products.join(", ") || "None"}
 Color Schemes: ${context.colors.join(", ") || "None"}
 Design Styles: ${context.styles.join(", ") || "None"}
 
-Generate a complete product listing with:
-1. A catchy product title (50-60 characters)
-2. A compelling product description (150-200 words) highlighting unique features
-3. 5-7 bullet points of key features
-4. Suggested tags/keywords for SEO
-5. Recommended price range
+Generate a complete e-commerce listing optimized for search and conversion:
+1. SEO-optimized title (under 140 characters, keyword-rich)
+2. Compelling description (2-3 paragraphs, 150-250 words, benefits-focused with keywords)
+3. 5-7 key feature bullet points (highlight unique selling points)
+4. EXACTLY 13 SEO tags (single words or short 2-3 word phrases for searchability)
+5. Suggested price range
 
-Format as JSON with keys: title, description, features (array), tags (array), priceRange`;
+Format as JSON with keys: title, description, features (array), tags (array of EXACTLY 13 items), priceRange`;
 
     console.log("Generating listing with context:", context);
 

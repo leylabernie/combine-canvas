@@ -22,8 +22,10 @@ const Index = () => {
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [generatedMockup, setGeneratedMockup] = useState<string | null>(null);
   const [generatedListing, setGeneratedListing] = useState<any>(null);
   const [showImageDialog, setShowImageDialog] = useState(false);
+  const [showMockupDialog, setShowMockupDialog] = useState(false);
   const [showListingDialog, setShowListingDialog] = useState(false);
 
   const toggleSelection = (category: keyof Selection, value: string) => {
@@ -140,9 +142,38 @@ const Index = () => {
     }
   };
 
+  const handleGenerateMockup = async () => {
+    if (!generatedImage) return;
+    
+    setIsGenerating(true);
+    try {
+      toast.info("Generating product mock-up...");
+      
+      const { data, error } = await supabase.functions.invoke("generate-mockup", {
+        body: { selections, imageUrl: generatedImage },
+      });
+
+      if (error) throw error;
+
+      if (data?.mockupUrl) {
+        setGeneratedMockup(data.mockupUrl);
+        setShowImageDialog(false);
+        setShowMockupDialog(true);
+        toast.success("Mock-up generated!");
+      }
+    } catch (error: any) {
+      console.error("Error generating mock-up:", error);
+      toast.error(error.message || "Failed to generate mock-up");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleGenerateListing = async () => {
     setIsGenerating(true);
     try {
+      toast.info("Generating SEO-optimized listing...");
+      
       const { data, error } = await supabase.functions.invoke("generate-listing", {
         body: { selections },
       });
@@ -150,6 +181,8 @@ const Index = () => {
       if (error) throw error;
 
       setGeneratedListing(data.listing);
+      setShowImageDialog(false);
+      setShowMockupDialog(false);
       setShowListingDialog(true);
       toast.success("Listing generated successfully!");
     } catch (error: any) {
@@ -177,11 +210,11 @@ const Index = () => {
     toast.success("Listing exported successfully!");
   };
 
-  const downloadImage = () => {
-    if (!generatedImage) return;
+  const downloadImage = (imageUrl: string, prefix: string) => {
+    if (!imageUrl) return;
     const a = document.createElement('a');
-    a.href = generatedImage;
-    a.download = `design-${Date.now()}.png`;
+    a.href = imageUrl;
+    a.download = `${prefix}-${Date.now()}.png`;
     a.click();
   };
 
@@ -381,45 +414,60 @@ const Index = () => {
 
         {/* Footer */}
         {hasSelections && (
-          <div className="flex justify-center gap-4 flex-wrap">
+          <div className="flex justify-center">
             <Button 
               size="lg" 
               className="bg-gradient-to-r from-primary to-secondary hover:opacity-90" 
               onClick={handleGeneratePNG}
               disabled={isGenerating}
             >
-              {isGenerating ? "Generating..." : "Generate PNG on Transparent Background"}
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              onClick={handleGenerateListing}
-              disabled={isGenerating}
-            >
-              {isGenerating ? "Generating..." : "Generate Listing"}
-            </Button>
-            <Button 
-              size="lg" 
-              variant="secondary" 
-              onClick={handleExportListing}
-            >
-              Export Full Listing
+              {isGenerating ? "Generating..." : "Generate PNG Design"}
             </Button>
           </div>
         )}
 
-        {/* Image Dialog */}
+        {/* PNG Image Dialog */}
         <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>Generated Design</DialogTitle>
+              <DialogTitle>Generated PNG Design</DialogTitle>
             </DialogHeader>
             {generatedImage && (
               <div className="space-y-4">
-                <img src={generatedImage} alt="Generated design" className="w-full rounded-lg" />
-                <Button onClick={downloadImage} className="w-full">
-                  Download PNG
-                </Button>
+                <img src={generatedImage} alt="Generated design" className="w-full rounded-lg bg-gray-100" />
+                <div className="flex gap-2">
+                  <Button onClick={() => downloadImage(generatedImage, 'design')} variant="outline" className="flex-1">
+                    Download PNG
+                  </Button>
+                  <Button onClick={handleGenerateMockup} disabled={isGenerating} className="flex-1">
+                    {isGenerating ? "Generating..." : "Generate Mock-up"}
+                  </Button>
+                  <Button onClick={handleGenerateListing} disabled={isGenerating} className="flex-1">
+                    {isGenerating ? "Generating..." : "Generate Listing"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Mock-up Dialog */}
+        <Dialog open={showMockupDialog} onOpenChange={setShowMockupDialog}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Product Mock-up</DialogTitle>
+            </DialogHeader>
+            {generatedMockup && (
+              <div className="space-y-4">
+                <img src={generatedMockup} alt="Product mock-up" className="w-full rounded-lg" />
+                <div className="flex gap-2">
+                  <Button onClick={() => downloadImage(generatedMockup, 'mockup')} variant="outline" className="flex-1">
+                    Download Mock-up
+                  </Button>
+                  <Button onClick={handleGenerateListing} disabled={isGenerating} className="flex-1">
+                    {isGenerating ? "Generating..." : "Generate Listing"}
+                  </Button>
+                </div>
               </div>
             )}
           </DialogContent>
