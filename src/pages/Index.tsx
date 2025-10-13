@@ -442,9 +442,6 @@ const Index = () => {
                   <Button onClick={handleGenerateMockup} disabled={isGenerating} className="flex-1">
                     {isGenerating ? "Generating..." : "Generate Mock-up"}
                   </Button>
-                  <Button onClick={handleGenerateListing} disabled={isGenerating} className="flex-1">
-                    {isGenerating ? "Generating..." : "Generate Listing"}
-                  </Button>
                 </div>
               </div>
             )}
@@ -525,6 +522,9 @@ const Index = () => {
                     <p className="text-sm whitespace-pre-wrap">{generatedListing.rawContent}</p>
                   </div>
                 )}
+                <Button onClick={handleExportListing} className="w-full">
+                  Export Listing
+                </Button>
               </div>
             )}
           </DialogContent>
