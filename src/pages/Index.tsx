@@ -25,9 +25,6 @@ const Index = () => {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [generatedMockup, setGeneratedMockup] = useState<string | null>(null);
   const [generatedListing, setGeneratedListing] = useState<any>(null);
-  const [showImageDialog, setShowImageDialog] = useState(false);
-  const [showMockupDialog, setShowMockupDialog] = useState(false);
-  const [showListingDialog, setShowListingDialog] = useState(false);
 
   const toggleSelection = (category: keyof Selection, value: string) => {
     setSelections((prev) => ({
@@ -132,7 +129,6 @@ const Index = () => {
 
       if (data?.imageUrl) {
         setGeneratedImage(data.imageUrl);
-        setShowImageDialog(true);
         toast.success("PNG with transparent background generated!");
       }
     } catch (error: any) {
@@ -158,8 +154,6 @@ const Index = () => {
 
       if (data?.mockupUrl) {
         setGeneratedMockup(data.mockupUrl);
-        setShowImageDialog(false);
-        setShowMockupDialog(true);
         toast.success("Mock-up generated!");
       }
     } catch (error: any) {
@@ -182,9 +176,6 @@ const Index = () => {
       if (error) throw error;
 
       setGeneratedListing(data.listing);
-      setShowImageDialog(false);
-      setShowMockupDialog(false);
-      setShowListingDialog(true);
       toast.success("Listing generated successfully!");
     } catch (error: any) {
       console.error("Error generating listing:", error);
@@ -460,113 +451,104 @@ const Index = () => {
           </div>
         )}
 
-        {/* PNG Image Dialog */}
-        <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
-          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Generated PNG Design</DialogTitle>
-            </DialogHeader>
+
+        {/* Generated Content Section */}
+        {(generatedImage || generatedMockup || generatedListing) && (
+          <section className="mb-12 space-y-8">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold mb-2">Generated Content</h2>
+              <p className="text-muted-foreground">Review your design, mockup, and listing</p>
+            </div>
+
+            {/* PNG Design */}
             {generatedImage && (
-              <div className="space-y-4">
-                <div className="max-h-[55vh] overflow-hidden">
-                  <img src={generatedImage} alt="Generated design" className="w-full h-auto rounded-lg bg-gray-100 object-contain" />
+              <Card className="p-6">
+                <h3 className="text-2xl font-semibold mb-4">PNG Design (Transparent Background)</h3>
+                <div className="bg-checkered rounded-lg p-4 mb-4">
+                  <img src={generatedImage} alt="Generated design" className="w-full max-h-96 object-contain mx-auto" />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-4">
                   <Button onClick={() => downloadImage(generatedImage, 'design')} variant="outline" className="flex-1">
                     Download PNG
                   </Button>
-                  <Button onClick={handleGenerateMockup} disabled={isGenerating} className="flex-1">
-                    {isGenerating ? "Generating..." : "Generate Mock-up"}
+                  <Button onClick={handleGenerateMockup} disabled={isGenerating || !!generatedMockup} className="flex-1">
+                    {isGenerating ? "Generating..." : generatedMockup ? "Mock-up Generated ✓" : "Generate Mock-up"}
                   </Button>
                 </div>
-              </div>
+              </Card>
             )}
-          </DialogContent>
-        </Dialog>
 
-        {/* Mock-up Dialog */}
-        <Dialog open={showMockupDialog} onOpenChange={setShowMockupDialog}>
-          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Product Mock-up</DialogTitle>
-            </DialogHeader>
+            {/* Product Mockup */}
             {generatedMockup && (
-              <div className="space-y-4">
-                <div className="max-h-[55vh] overflow-hidden">
-                  <img src={generatedMockup} alt="Product mock-up" className="w-full h-auto rounded-lg object-contain" />
+              <Card className="p-6">
+                <h3 className="text-2xl font-semibold mb-4">Product Mock-up</h3>
+                <div className="bg-muted rounded-lg p-4 mb-4">
+                  <img src={generatedMockup} alt="Product mock-up" className="w-full max-h-96 object-contain mx-auto" />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-4">
                   <Button onClick={() => downloadImage(generatedMockup, 'mockup')} variant="outline" className="flex-1">
                     Download Mock-up
                   </Button>
-                  <Button onClick={handleGenerateListing} disabled={isGenerating} className="flex-1">
-                    {isGenerating ? "Generating..." : "Generate Listing"}
+                  <Button onClick={handleGenerateListing} disabled={isGenerating || !!generatedListing} className="flex-1">
+                    {isGenerating ? "Generating..." : generatedListing ? "Listing Generated ✓" : "Generate Listing"}
                   </Button>
                 </div>
-              </div>
+              </Card>
             )}
-          </DialogContent>
-        </Dialog>
 
-        {/* Listing Dialog */}
-        <Dialog open={showListingDialog} onOpenChange={setShowListingDialog}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Generated Product Listing</DialogTitle>
-            </DialogHeader>
+            {/* Product Listing */}
             {generatedListing && (
-              <div className="space-y-4">
-                {generatedListing.title && (
-                  <div>
-                    <h3 className="font-semibold mb-2">Title:</h3>
-                    <p>{generatedListing.title}</p>
-                  </div>
-                )}
-                {generatedListing.description && (
-                  <div>
-                    <h3 className="font-semibold mb-2">Description:</h3>
-                    <p className="text-sm text-muted-foreground">{generatedListing.description}</p>
-                  </div>
-                )}
-                {generatedListing.features && (
-                  <div>
-                    <h3 className="font-semibold mb-2">Features:</h3>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
-                      {generatedListing.features.map((feature: string, i: number) => (
-                        <li key={i}>{feature}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {generatedListing.tags && (
-                  <div>
-                    <h3 className="font-semibold mb-2">Tags:</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {generatedListing.tags.map((tag: string, i: number) => (
-                        <Badge key={i} variant="secondary">{tag}</Badge>
-                      ))}
+              <Card className="p-6">
+                <h3 className="text-2xl font-semibold mb-6">Product Listing</h3>
+                <div className="space-y-6">
+                  {generatedListing.title && (
+                    <div>
+                      <h4 className="font-semibold mb-2 text-muted-foreground">Title</h4>
+                      <p className="text-lg">{generatedListing.title}</p>
                     </div>
-                  </div>
-                )}
-                {generatedListing.priceRange && (
-                  <div>
-                    <h3 className="font-semibold mb-2">Price Range:</h3>
-                    <p className="text-sm">{generatedListing.priceRange}</p>
-                  </div>
-                )}
-                {generatedListing.rawContent && (
-                  <div>
-                    <h3 className="font-semibold mb-2">Content:</h3>
-                    <p className="text-sm whitespace-pre-wrap">{generatedListing.rawContent}</p>
-                  </div>
-                )}
-                <Button onClick={handleExportListing} className="w-full">
-                  Export Listing
-                </Button>
-              </div>
+                  )}
+                  {generatedListing.description && (
+                    <div>
+                      <h4 className="font-semibold mb-2 text-muted-foreground">Description</h4>
+                      <p className="text-muted-foreground">{generatedListing.description}</p>
+                    </div>
+                  )}
+                  {generatedListing.features && (
+                    <div>
+                      <h4 className="font-semibold mb-2 text-muted-foreground">Features</h4>
+                      <ul className="list-disc list-inside space-y-1">
+                        {generatedListing.features.map((feature: string, i: number) => (
+                          <li key={i}>{feature}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {generatedListing.tags && (
+                    <div>
+                      <h4 className="font-semibold mb-2 text-muted-foreground">Tags</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {generatedListing.tags.map((tag: string, i: number) => (
+                          <Badge key={i} variant="secondary">{tag}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {generatedListing.priceRange && (
+                    <div>
+                      <h4 className="font-semibold mb-2 text-muted-foreground">Price Range</h4>
+                      <p>{generatedListing.priceRange}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-6">
+                  <Button onClick={handleExportListing} className="w-full" size="lg">
+                    Export as ZIP
+                  </Button>
+                </div>
+              </Card>
             )}
-          </DialogContent>
-        </Dialog>
+          </section>
+        )}
       </div>
     </div>
   );
