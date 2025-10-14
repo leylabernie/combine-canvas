@@ -462,13 +462,15 @@ const Index = () => {
 
         {/* PNG Image Dialog */}
         <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
-          <DialogContent className="max-w-3xl">
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Generated PNG Design</DialogTitle>
             </DialogHeader>
             {generatedImage && (
               <div className="space-y-4">
-                <img src={generatedImage} alt="Generated design" className="w-full rounded-lg bg-gray-100" />
+                <div className="max-h-[55vh] overflow-hidden">
+                  <img src={generatedImage} alt="Generated design" className="w-full h-auto rounded-lg bg-gray-100 object-contain" />
+                </div>
                 <div className="flex gap-2">
                   <Button onClick={() => downloadImage(generatedImage, 'design')} variant="outline" className="flex-1">
                     Download PNG
@@ -484,13 +486,15 @@ const Index = () => {
 
         {/* Mock-up Dialog */}
         <Dialog open={showMockupDialog} onOpenChange={setShowMockupDialog}>
-          <DialogContent className="max-w-3xl">
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Product Mock-up</DialogTitle>
             </DialogHeader>
             {generatedMockup && (
               <div className="space-y-4">
-                <img src={generatedMockup} alt="Product mock-up" className="w-full rounded-lg" />
+                <div className="max-h-[55vh] overflow-hidden">
+                  <img src={generatedMockup} alt="Product mock-up" className="w-full h-auto rounded-lg object-contain" />
+                </div>
                 <div className="flex gap-2">
                   <Button onClick={() => downloadImage(generatedMockup, 'mockup')} variant="outline" className="flex-1">
                     Download Mock-up
