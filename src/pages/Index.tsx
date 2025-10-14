@@ -194,17 +194,24 @@ const Index = () => {
   };
 
   const handleExportListing = () => {
+    if (!generatedListing) {
+      toast.error("No listing to export");
+      return;
+    }
+
     const exportData = {
-      ...selections,
-      generatedImage,
-      generatedListing,
-      timestamp: new Date().toISOString(),
+      selections,
+      pngImage: generatedImage,
+      mockupImage: generatedMockup,
+      listing: generatedListing,
+      exportedAt: new Date().toISOString(),
     };
+    
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `design-listing-${Date.now()}.json`;
+    a.download = `product-listing-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Listing exported successfully!");
