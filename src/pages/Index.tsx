@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import JSZip from "jszip";
 
 interface Selection {
   inspirations: string[];
@@ -193,28 +194,54 @@ const Index = () => {
     }
   };
 
-  const handleExportListing = () => {
+  const handleExportListing = async () => {
     if (!generatedListing) {
       toast.error("No listing to export");
       return;
     }
 
-    const exportData = {
-      selections,
-      pngImage: generatedImage,
-      mockupImage: generatedMockup,
-      listing: generatedListing,
-      exportedAt: new Date().toISOString(),
-    };
-    
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `product-listing-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Listing exported successfully!");
+    try {
+      const zip = new JSZip();
+
+      // Add listing data as JSON
+      const listingData = {
+        title: generatedListing.title,
+        description: generatedListing.description,
+        features: generatedListing.features,
+        tags: generatedListing.tags,
+        priceRange: generatedListing.priceRange,
+        selections: selections,
+        exportedAt: new Date().toISOString(),
+      };
+      zip.file('listing.json', JSON.stringify(listingData, null, 2));
+
+      // Add PNG design if available
+      if (generatedImage) {
+        const pngResponse = await fetch(generatedImage);
+        const pngBlob = await pngResponse.blob();
+        zip.file('design.png', pngBlob);
+      }
+
+      // Add mockup if available
+      if (generatedMockup) {
+        const mockupResponse = await fetch(generatedMockup);
+        const mockupBlob = await mockupResponse.blob();
+        zip.file('mockup.png', mockupBlob);
+      }
+
+      // Generate and download ZIP
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `product-listing-${Date.now()}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Listing exported as ZIP successfully!");
+    } catch (error) {
+      console.error("Error creating ZIP:", error);
+      toast.error("Failed to export listing");
+    }
   };
 
   const downloadImage = (imageUrl: string, prefix: string) => {

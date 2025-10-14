@@ -34,7 +34,7 @@ serve(async (req) => {
       promptParts.push(`Design style: ${selections.designConcepts.join(", ")}`);
     }
 
-    const prompt = `Create a beautiful, high-quality product design with transparent background as a PNG image. ${promptParts.join(". ")}. Ultra high resolution, professional design, centered composition, perfect for e-commerce with transparent background.`;
+    const prompt = `Create ONLY a flat design element (NOT a mock-up on a product) with transparent background. This should be a standalone graphic design that can be applied to products. ${promptParts.join(". ")}. The design should be a beautiful, isolated graphic element on a transparent background - just the artwork itself, no products, no mock-ups, no physical items. Ultra high resolution, centered composition, perfect for printing on products.`;
 
     console.log("Generating image with prompt:", prompt);
 
@@ -104,7 +104,7 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: "Remove the background from this image and make it completely transparent. Keep only the product, remove everything else."
+                text: "Remove the background from this image and make it completely transparent. Keep only the design element/artwork, remove everything else including any products or physical items."
               },
               {
                 type: "image_url",
