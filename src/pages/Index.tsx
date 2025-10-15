@@ -129,7 +129,16 @@ const Index = () => {
         body: { selections },
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes("Payment required")) {
+          toast.error("Out of credits. Please add credits to your Lovable workspace in Settings → Usage.");
+        } else if (error.message?.includes("Rate limit")) {
+          toast.error("Rate limit exceeded. Please try again later.");
+        } else {
+          toast.error("Failed to generate design. Please try again.");
+        }
+        throw error;
+      }
 
       if (data?.imageUrl) {
         setGeneratedImage(data.imageUrl);
@@ -154,7 +163,16 @@ const Index = () => {
         body: { selections, imageUrl: generatedImage },
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes("Payment required")) {
+          toast.error("Out of credits. Please add credits to your Lovable workspace in Settings → Usage.");
+        } else if (error.message?.includes("Rate limit")) {
+          toast.error("Rate limit exceeded. Please try again later.");
+        } else {
+          toast.error("Failed to generate mock-up. Please try again.");
+        }
+        throw error;
+      }
 
       if (data?.mockupUrl) {
         setGeneratedMockup(data.mockupUrl);
@@ -177,7 +195,16 @@ const Index = () => {
         body: { selections },
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes("Payment required")) {
+          toast.error("Out of credits. Please add credits to your Lovable workspace in Settings → Usage.");
+        } else if (error.message?.includes("Rate limit")) {
+          toast.error("Rate limit exceeded. Please try again later.");
+        } else {
+          toast.error("Failed to generate listing. Please try again.");
+        }
+        throw error;
+      }
 
       setGeneratedListing(data.listing);
       toast.success("Listing generated successfully!");
