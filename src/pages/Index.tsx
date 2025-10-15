@@ -121,6 +121,10 @@ const Index = () => {
     try {
       toast.info("Generating transparent design image...");
       
+      // Clear previous mock-up and listing when generating new design
+      setGeneratedMockup(null);
+      setGeneratedListing(null);
+      
       const { data, error } = await supabase.functions.invoke("generate-design-png", {
         body: { selections },
       });
