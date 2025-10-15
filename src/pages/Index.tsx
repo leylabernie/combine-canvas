@@ -116,104 +116,15 @@ const Index = () => {
       toast.error("Please make at least one selection");
       return;
     }
-
-    setIsGenerating(true);
-    try {
-      toast.info("Generating transparent design image...");
-      
-      // Clear previous mock-up and listing when generating new design
-      setGeneratedMockup(null);
-      setGeneratedListing(null);
-      
-      const { data, error } = await supabase.functions.invoke("generate-design-png", {
-        body: { selections },
-      });
-
-      if (error) {
-        if (error.message?.includes("Payment required")) {
-          toast.error("Out of credits. Please add credits to your Lovable workspace in Settings → Usage.");
-        } else if (error.message?.includes("Rate limit")) {
-          toast.error("Rate limit exceeded. Please try again later.");
-        } else {
-          toast.error("Failed to generate design. Please try again.");
-        }
-        throw error;
-      }
-
-      if (data?.imageUrl) {
-        setGeneratedImage(data.imageUrl);
-        toast.success("PNG with transparent background generated!");
-      }
-    } catch (error: any) {
-      console.error("Error generating PNG:", error);
-      toast.error(error.message || "Failed to generate PNG");
-    } finally {
-      setIsGenerating(false);
-    }
+    toast.info("AI generation features have been disabled");
   };
 
   const handleGenerateMockup = async () => {
-    if (!generatedImage) return;
-    
-    setIsGenerating(true);
-    try {
-      toast.info("Generating product mock-up...");
-      
-      const { data, error } = await supabase.functions.invoke("generate-mockup", {
-        body: { selections, imageUrl: generatedImage },
-      });
-
-      if (error) {
-        if (error.message?.includes("Payment required")) {
-          toast.error("Out of credits. Please add credits to your Lovable workspace in Settings → Usage.");
-        } else if (error.message?.includes("Rate limit")) {
-          toast.error("Rate limit exceeded. Please try again later.");
-        } else {
-          toast.error("Failed to generate mock-up. Please try again.");
-        }
-        throw error;
-      }
-
-      if (data?.mockupUrl) {
-        setGeneratedMockup(data.mockupUrl);
-        toast.success("Mock-up generated!");
-      }
-    } catch (error: any) {
-      console.error("Error generating mock-up:", error);
-      toast.error(error.message || "Failed to generate mock-up");
-    } finally {
-      setIsGenerating(false);
-    }
+    toast.info("AI generation features have been disabled");
   };
 
   const handleGenerateListing = async () => {
-    setIsGenerating(true);
-    try {
-      toast.info("Generating SEO-optimized listing...");
-      
-      const { data, error } = await supabase.functions.invoke("generate-listing", {
-        body: { selections },
-      });
-
-      if (error) {
-        if (error.message?.includes("Payment required")) {
-          toast.error("Out of credits. Please add credits to your Lovable workspace in Settings → Usage.");
-        } else if (error.message?.includes("Rate limit")) {
-          toast.error("Rate limit exceeded. Please try again later.");
-        } else {
-          toast.error("Failed to generate listing. Please try again.");
-        }
-        throw error;
-      }
-
-      setGeneratedListing(data.listing);
-      toast.success("Listing generated successfully!");
-    } catch (error: any) {
-      console.error("Error generating listing:", error);
-      toast.error(error.message || "Failed to generate listing");
-    } finally {
-      setIsGenerating(false);
-    }
+    toast.info("AI generation features have been disabled");
   };
 
   const handleExportListing = async () => {
