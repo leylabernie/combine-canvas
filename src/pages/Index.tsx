@@ -487,23 +487,25 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Generate Designs Button */}
-        <section className="mb-12">
-          <Card className="p-8 text-center bg-gradient-to-br from-primary/5 to-secondary/5 border-2">
-            <h2 className="text-3xl font-bold mb-4">Ready to Create?</h2>
-            <p className="text-muted-foreground mb-6">
-              Generate 3 unique design variations based on your selections
-            </p>
-            <Button 
-              onClick={handleGenerateDesigns} 
-              disabled={isGenerating}
-              size="lg"
-              className="px-8"
-            >
-              {isGenerating ? "Generating..." : "Generate Design Variations"}
-            </Button>
-          </Card>
-        </section>
+        {/* Generate Designs Button - Only show if no designs generated yet */}
+        {designVariations.length === 0 && (
+          <section className="mb-12">
+            <Card className="p-8 text-center bg-gradient-to-br from-primary/5 to-secondary/5 border-2">
+              <h2 className="text-3xl font-bold mb-4">Ready to Create?</h2>
+              <p className="text-muted-foreground mb-6">
+                Generate 3 unique design variations based on your selections
+              </p>
+              <Button 
+                onClick={handleGenerateDesigns} 
+                disabled={isGenerating}
+                size="lg"
+                className="px-8"
+              >
+                {isGenerating ? "Generating..." : "Generate Design Variations"}
+              </Button>
+            </Card>
+          </section>
+        )}
 
         {/* Design Variations Gallery */}
         {designVariations.length > 0 && (
