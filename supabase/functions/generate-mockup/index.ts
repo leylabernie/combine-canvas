@@ -20,7 +20,24 @@ serve(async (req) => {
 
     const productTypes = selections.productTypes?.join(", ") || "product";
 
-    const prompt = `Place this design on a realistic ${productTypes} mockup. Show the product in a professional, well-lit setting with good composition. Make it look like a high-quality product photograph suitable for e-commerce. The mockup should be photorealistic and commercially appealing.`;
+    const prompt = `Create an ultra-high quality, photorealistic product mockup of a ${productTypes} featuring this design. 
+
+Professional Photography Requirements:
+- Studio-quality lighting with soft shadows and professional highlights
+- Sharp focus and crystal-clear details
+- High-end e-commerce product photography style
+- Varied angles and compositions (front view, 3/4 angle, lifestyle setting, close-up detail shots)
+- Natural, appealing presentation that showcases the design prominently
+- Professional staging with complementary props or backgrounds
+- Commercial photography aesthetic suitable for premium brand marketing
+
+Technical Specifications:
+- Ultra high resolution
+- Photorealistic rendering
+- Professional color grading
+- Optimal depth of field
+
+Make each mockup unique in pose, angle, and setting while maintaining consistently high quality.`;
 
     console.log("Generating mockup with prompt:", prompt);
 
