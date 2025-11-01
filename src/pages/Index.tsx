@@ -22,8 +22,10 @@ const Index = () => {
     designConcepts: [],
   });
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const [generatedMockup, setGeneratedMockup] = useState<string | null>(null);
+  const [designVariations, setDesignVariations] = useState<string[]>([]);
+  const [selectedDesign, setSelectedDesign] = useState<string | null>(null);
+  const [mockupVariations, setMockupVariations] = useState<string[]>([]);
+  const [selectedMockup, setSelectedMockup] = useState<string | null>(null);
   const [generatedListing, setGeneratedListing] = useState<any>(null);
 
   const toggleSelection = (category: keyof Selection, value: string) => {
@@ -111,76 +113,94 @@ const Index = () => {
     { id: "abstract", name: "Abstract", desc: "Artistic freedom" },
   ];
 
-  const handleGeneratePNG = async () => {
+  const handleGenerateDesigns = async () => {
     if (!hasSelections) {
       toast.error("Please make at least one selection");
       return;
     }
 
     setIsGenerating(true);
+    setDesignVariations([]);
+    setSelectedDesign(null);
+    setMockupVariations([]);
+    setSelectedMockup(null);
+    setGeneratedListing(null);
+    
     try {
-      toast.info("Generating transparent design image...");
+      toast.info("Generating 3 design variations...");
       
-      // Clear previous mock-up and listing when generating new design
-      setGeneratedMockup(null);
-      setGeneratedListing(null);
+      const promises = Array(3).fill(null).map(() => 
+        supabase.functions.invoke("generate-design-png", {
+          body: { selections },
+        })
+      );
       
-      const { data, error } = await supabase.functions.invoke("generate-design-png", {
-        body: { selections },
-      });
+      const results = await Promise.all(promises);
+      const imageUrls = results
+        .filter(({ data, error }) => !error && data?.imageUrl)
+        .map(({ data }) => data.imageUrl);
 
-      if (error) {
-        if (error.message?.includes("Payment required")) {
+      if (imageUrls.length === 0) {
+        const firstError = results.find(({ error }) => error)?.error;
+        if (firstError?.message?.includes("Payment required")) {
           toast.error("Out of credits. Please add credits to your Lovable workspace in Settings → Usage.");
-        } else if (error.message?.includes("Rate limit")) {
+        } else if (firstError?.message?.includes("Rate limit")) {
           toast.error("Rate limit exceeded. Please try again later.");
         } else {
-          toast.error("Failed to generate design. Please try again.");
+          toast.error("Failed to generate designs. Please try again.");
         }
-        throw error;
+        return;
       }
 
-      if (data?.imageUrl) {
-        setGeneratedImage(data.imageUrl);
-        toast.success("PNG with transparent background generated!");
-      }
+      setDesignVariations(imageUrls);
+      toast.success(`${imageUrls.length} design variations generated!`);
     } catch (error: any) {
-      console.error("Error generating PNG:", error);
-      toast.error(error.message || "Failed to generate PNG");
+      console.error("Error generating designs:", error);
+      toast.error(error.message || "Failed to generate designs");
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleGenerateMockup = async () => {
-    if (!generatedImage) return;
+  const handleGenerateMockups = async () => {
+    if (!selectedDesign) return;
     
     setIsGenerating(true);
+    setMockupVariations([]);
+    setSelectedMockup(null);
+    setGeneratedListing(null);
+    
     try {
-      toast.info("Generating product mock-up...");
+      toast.info("Generating 7 mockup variations...");
       
-      const { data, error } = await supabase.functions.invoke("generate-mockup", {
-        body: { selections, imageUrl: generatedImage },
-      });
+      const promises = Array(7).fill(null).map(() => 
+        supabase.functions.invoke("generate-mockup", {
+          body: { selections, imageUrl: selectedDesign },
+        })
+      );
+      
+      const results = await Promise.all(promises);
+      const mockupUrls = results
+        .filter(({ data, error }) => !error && data?.mockupUrl)
+        .map(({ data }) => data.mockupUrl);
 
-      if (error) {
-        if (error.message?.includes("Payment required")) {
+      if (mockupUrls.length === 0) {
+        const firstError = results.find(({ error }) => error)?.error;
+        if (firstError?.message?.includes("Payment required")) {
           toast.error("Out of credits. Please add credits to your Lovable workspace in Settings → Usage.");
-        } else if (error.message?.includes("Rate limit")) {
+        } else if (firstError?.message?.includes("Rate limit")) {
           toast.error("Rate limit exceeded. Please try again later.");
         } else {
-          toast.error("Failed to generate mock-up. Please try again.");
+          toast.error("Failed to generate mockups. Please try again.");
         }
-        throw error;
+        return;
       }
 
-      if (data?.mockupUrl) {
-        setGeneratedMockup(data.mockupUrl);
-        toast.success("Mock-up generated!");
-      }
+      setMockupVariations(mockupUrls);
+      toast.success(`${mockupUrls.length} mockup variations generated!`);
     } catch (error: any) {
-      console.error("Error generating mock-up:", error);
-      toast.error(error.message || "Failed to generate mock-up");
+      console.error("Error generating mockups:", error);
+      toast.error(error.message || "Failed to generate mockups");
     } finally {
       setIsGenerating(false);
     }
@@ -237,16 +257,16 @@ const Index = () => {
       };
       zip.file('listing.json', JSON.stringify(listingData, null, 2));
 
-      // Add PNG design if available
-      if (generatedImage) {
-        const pngResponse = await fetch(generatedImage);
+      // Add selected design if available
+      if (selectedDesign) {
+        const pngResponse = await fetch(selectedDesign);
         const pngBlob = await pngResponse.blob();
         zip.file('design.png', pngBlob);
       }
 
-      // Add mockup if available
-      if (generatedMockup) {
-        const mockupResponse = await fetch(generatedMockup);
+      // Add selected mockup if available
+      if (selectedMockup) {
+        const mockupResponse = await fetch(selectedMockup);
         const mockupBlob = await mockupResponse.blob();
         zip.file('mockup.png', mockupBlob);
       }
@@ -468,117 +488,88 @@ const Index = () => {
         </section>
 
 
-        {/* Footer */}
-        {hasSelections && (
-          <div className="flex justify-center">
-            <Button 
-              size="lg" 
-              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90" 
-              onClick={handleGeneratePNG}
-              disabled={isGenerating}
-            >
-              {isGenerating ? "Generating..." : "Generate PNG Design"}
-            </Button>
-          </div>
-        )}
+        {/* Product Listing Section */}
+        {generatedListing && (
+          <>
+            <div className="space-y-8 mb-12">
+              <Card className="p-6">
+                <h3 className="text-2xl font-bold mb-4">Selected Design</h3>
+                <div className="bg-checkerboard rounded-lg p-4 mb-4">
+                  <img
+                    src={selectedDesign || ''}
+                    alt="Selected design"
+                    className="max-w-sm h-auto mx-auto"
+                  />
+                </div>
+                <Button onClick={() => downloadImage(selectedDesign || '', 'design')} className="w-full">
+                  Download Design PNG
+                </Button>
+              </Card>
 
-
-        {/* Generated Content Section */}
-        {(generatedImage || generatedMockup || generatedListing) && (
-          <section className="mb-12 space-y-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold mb-2">Generated Content</h2>
-              <p className="text-muted-foreground">Review your design, mockup, and listing</p>
+              <Card className="p-6">
+                <h3 className="text-2xl font-bold mb-4">Selected Mockup</h3>
+                <div className="rounded-lg p-4 mb-4 bg-muted/30">
+                  <img
+                    src={selectedMockup || ''}
+                    alt="Selected mockup"
+                    className="max-w-sm h-auto mx-auto"
+                  />
+                </div>
+                <Button onClick={() => downloadImage(selectedMockup || '', 'mockup')} className="w-full">
+                  Download Mockup
+                </Button>
+              </Card>
             </div>
 
-            {/* PNG Design */}
-            {generatedImage && (
-              <Card className="p-6">
-                <h3 className="text-2xl font-semibold mb-4">PNG Design (Transparent Background)</h3>
-                <div className="bg-checkered rounded-lg p-4 mb-4">
-                  <img src={generatedImage} alt="Generated design" className="w-full max-h-96 object-contain mx-auto" />
-                </div>
-                <div className="flex gap-4">
-                  <Button onClick={() => downloadImage(generatedImage, 'design')} variant="outline" className="flex-1">
-                    Download PNG
-                  </Button>
-                  <Button onClick={handleGenerateMockup} disabled={isGenerating || !!generatedMockup} className="flex-1">
-                    {isGenerating ? "Generating..." : generatedMockup ? "Mock-up Generated ✓" : "Generate Mock-up"}
-                  </Button>
-                </div>
-              </Card>
-            )}
-
-            {/* Product Mockup */}
-            {generatedMockup && (
-              <Card className="p-6">
-                <h3 className="text-2xl font-semibold mb-4">Product Mock-up</h3>
-                <div className="bg-muted rounded-lg p-4 mb-4">
-                  <img src={generatedMockup} alt="Product mock-up" className="w-full max-h-96 object-contain mx-auto" />
-                </div>
-                <div className="flex gap-4">
-                  <Button onClick={() => downloadImage(generatedMockup, 'mockup')} variant="outline" className="flex-1">
-                    Download Mock-up
-                  </Button>
-                  <Button onClick={handleGenerateListing} disabled={isGenerating || !!generatedListing} className="flex-1">
-                    {isGenerating ? "Generating..." : generatedListing ? "Listing Generated ✓" : "Generate Listing"}
-                  </Button>
-                </div>
-              </Card>
-            )}
-
-            {/* Product Listing */}
-            {generatedListing && (
-              <Card className="p-6">
-                <h3 className="text-2xl font-semibold mb-6">Product Listing</h3>
-                <div className="space-y-6">
-                  {generatedListing.title && (
-                    <div>
-                      <h4 className="font-semibold mb-2 text-muted-foreground">Title</h4>
-                      <p className="text-lg">{generatedListing.title}</p>
+            <Card className="p-6">
+              <h3 className="text-2xl font-semibold mb-6">Product Listing</h3>
+              <div className="space-y-6">
+                {generatedListing.title && (
+                  <div>
+                    <h4 className="font-semibold mb-2 text-muted-foreground">Title</h4>
+                    <p className="text-lg">{generatedListing.title}</p>
+                  </div>
+                )}
+                {generatedListing.description && (
+                  <div>
+                    <h4 className="font-semibold mb-2 text-muted-foreground">Description</h4>
+                    <p className="text-muted-foreground">{generatedListing.description}</p>
+                  </div>
+                )}
+                {generatedListing.features && (
+                  <div>
+                    <h4 className="font-semibold mb-2 text-muted-foreground">Features</h4>
+                    <ul className="list-disc list-inside space-y-1">
+                      {generatedListing.features.map((feature: string, i: number) => (
+                        <li key={i}>{feature}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {generatedListing.tags && (
+                  <div>
+                    <h4 className="font-semibold mb-2 text-muted-foreground">Tags</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {generatedListing.tags.map((tag: string, i: number) => (
+                        <Badge key={i} variant="secondary">{tag}</Badge>
+                      ))}
                     </div>
-                  )}
-                  {generatedListing.description && (
-                    <div>
-                      <h4 className="font-semibold mb-2 text-muted-foreground">Description</h4>
-                      <p className="text-muted-foreground">{generatedListing.description}</p>
-                    </div>
-                  )}
-                  {generatedListing.features && (
-                    <div>
-                      <h4 className="font-semibold mb-2 text-muted-foreground">Features</h4>
-                      <ul className="list-disc list-inside space-y-1">
-                        {generatedListing.features.map((feature: string, i: number) => (
-                          <li key={i}>{feature}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {generatedListing.tags && (
-                    <div>
-                      <h4 className="font-semibold mb-2 text-muted-foreground">Tags</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {generatedListing.tags.map((tag: string, i: number) => (
-                          <Badge key={i} variant="secondary">{tag}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {generatedListing.priceRange && (
-                    <div>
-                      <h4 className="font-semibold mb-2 text-muted-foreground">Price Range</h4>
-                      <p>{generatedListing.priceRange}</p>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-6">
-                  <Button onClick={handleExportListing} className="w-full" size="lg">
-                    Export as ZIP
-                  </Button>
-                </div>
-              </Card>
-            )}
-          </section>
+                  </div>
+                )}
+                {generatedListing.priceRange && (
+                  <div>
+                    <h4 className="font-semibold mb-2 text-muted-foreground">Price Range</h4>
+                    <p>{generatedListing.priceRange}</p>
+                  </div>
+                )}
+              </div>
+              <div className="mt-6">
+                <Button onClick={handleExportListing} className="w-full" size="lg">
+                  Export as ZIP
+                </Button>
+              </div>
+            </Card>
+          </>
         )}
       </div>
     </div>
