@@ -487,6 +487,120 @@ const Index = () => {
           </div>
         </section>
 
+        {/* Generate Designs Button */}
+        <section className="mb-12">
+          <Card className="p-8 text-center bg-gradient-to-br from-primary/5 to-secondary/5 border-2">
+            <h2 className="text-3xl font-bold mb-4">Ready to Create?</h2>
+            <p className="text-muted-foreground mb-6">
+              Generate 3 unique design variations based on your selections
+            </p>
+            <Button 
+              onClick={handleGenerateDesigns} 
+              disabled={isGenerating}
+              size="lg"
+              className="px-8"
+            >
+              {isGenerating ? "Generating..." : "Generate Design Variations"}
+            </Button>
+          </Card>
+        </section>
+
+        {/* Design Variations Gallery */}
+        {designVariations.length > 0 && (
+          <section className="mb-12">
+            <Card className="p-6">
+              <h3 className="text-2xl font-bold mb-4">Select Your Favorite Design</h3>
+              <p className="text-muted-foreground mb-6">Choose one design to create mockup variations</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {designVariations.map((imageUrl, index) => (
+                  <div
+                    key={index}
+                    className={`cursor-pointer rounded-lg border-4 transition-all hover:shadow-xl ${
+                      selectedDesign === imageUrl
+                        ? "border-primary shadow-lg"
+                        : "border-transparent hover:border-primary/50"
+                    }`}
+                    onClick={() => setSelectedDesign(imageUrl)}
+                  >
+                    <div className="bg-checkerboard rounded-lg p-4">
+                      <img
+                        src={imageUrl}
+                        alt={`Design variation ${index + 1}`}
+                        className="w-full h-auto mx-auto"
+                      />
+                    </div>
+                    <div className="text-center p-3">
+                      <p className="font-semibold">Design {index + 1}</p>
+                      {selectedDesign === imageUrl && (
+                        <Badge className="mt-2">Selected</Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {selectedDesign && (
+                <div className="mt-6 text-center">
+                  <Button 
+                    onClick={handleGenerateMockups} 
+                    disabled={isGenerating}
+                    size="lg"
+                  >
+                    {isGenerating ? "Generating..." : "Generate 7 Mockup Variations"}
+                  </Button>
+                </div>
+              )}
+            </Card>
+          </section>
+        )}
+
+        {/* Mockup Variations Gallery */}
+        {mockupVariations.length > 0 && (
+          <section className="mb-12">
+            <Card className="p-6">
+              <h3 className="text-2xl font-bold mb-4">Select Your Favorite Mockup</h3>
+              <p className="text-muted-foreground mb-6">Choose one mockup to create the final listing</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {mockupVariations.map((mockupUrl, index) => (
+                  <div
+                    key={index}
+                    className={`cursor-pointer rounded-lg border-4 transition-all hover:shadow-xl ${
+                      selectedMockup === mockupUrl
+                        ? "border-primary shadow-lg"
+                        : "border-transparent hover:border-primary/50"
+                    }`}
+                    onClick={() => setSelectedMockup(mockupUrl)}
+                  >
+                    <div className="bg-muted/30 rounded-lg p-4">
+                      <img
+                        src={mockupUrl}
+                        alt={`Mockup variation ${index + 1}`}
+                        className="w-full h-auto mx-auto"
+                      />
+                    </div>
+                    <div className="text-center p-3">
+                      <p className="font-semibold">Mockup {index + 1}</p>
+                      {selectedMockup === mockupUrl && (
+                        <Badge className="mt-2">Selected</Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {selectedMockup && (
+                <div className="mt-6 text-center">
+                  <Button 
+                    onClick={handleGenerateListing} 
+                    disabled={isGenerating}
+                    size="lg"
+                  >
+                    {isGenerating ? "Generating..." : "Generate Full Listing"}
+                  </Button>
+                </div>
+              )}
+            </Card>
+          </section>
+        )}
+
 
         {/* Product Listing Section */}
         {generatedListing && (
