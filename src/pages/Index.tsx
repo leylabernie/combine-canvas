@@ -171,33 +171,43 @@ const Index = () => {
     setGeneratedListing(null);
     
     try {
-      toast.info("Generating 7 mockup variations...");
+      const mockups: string[] = [];
       
-      const promises = Array(7).fill(null).map(() => 
-        supabase.functions.invoke("generate-mockup", {
-          body: { selections, imageUrl: selectedDesign },
-        })
-      );
-      
-      const results = await Promise.all(promises);
-      const mockupUrls = results
-        .filter(({ data, error }) => !error && data?.mockupUrl)
-        .map(({ data }) => data.mockupUrl);
+      // Generate 10 mockups sequentially with progress updates
+      for (let i = 0; i < 10; i++) {
+        toast.info(`Generating 8K mockup ${i + 1} of 10...`);
+        
+        const { data, error } = await supabase.functions.invoke("generate-mockup", {
+          body: { 
+            selections, 
+            imageUrl: selectedDesign,
+            promptIndex: i
+          },
+        });
 
-      if (mockupUrls.length === 0) {
-        const firstError = results.find(({ error }) => error)?.error;
-        if (firstError?.message?.includes("Payment required")) {
-          toast.error("Out of credits. Please add credits to your Lovable workspace in Settings → Usage.");
-        } else if (firstError?.message?.includes("Rate limit")) {
-          toast.error("Rate limit exceeded. Please try again later.");
-        } else {
-          toast.error("Failed to generate mockups. Please try again.");
+        if (error) {
+          console.error(`Error generating mockup ${i + 1}:`, error);
+          if (error.message?.includes("Payment required")) {
+            toast.error("Out of credits. Please add credits to your Lovable workspace in Settings → Usage.");
+            break;
+          } else if (error.message?.includes("Rate limit")) {
+            toast.error("Rate limit exceeded. Please wait and try again.");
+            break;
+          }
+          continue;
         }
-        return;
+        
+        if (data?.mockupUrl) {
+          mockups.push(data.mockupUrl);
+          setMockupVariations([...mockups]); // Update UI progressively
+        }
       }
 
-      setMockupVariations(mockupUrls);
-      toast.success(`${mockupUrls.length} mockup variations generated!`);
+      if (mockups.length > 0) {
+        toast.success(`Successfully generated ${mockups.length} 8K mockups!`);
+      } else {
+        toast.error("No mockups were generated");
+      }
     } catch (error: any) {
       console.error("Error generating mockups:", error);
       toast.error(error.message || "Failed to generate mockups");
