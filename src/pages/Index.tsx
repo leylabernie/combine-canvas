@@ -507,8 +507,8 @@ const Index = () => {
           </section>
         )}
 
-        {/* Design Variations Gallery */}
-        {designVariations.length > 0 && !isGenerating && (
+        {/* Design Variations Gallery - Only show if mockups not generated yet */}
+        {designVariations.length > 0 && !isGenerating && mockupVariations.length === 0 && (
           <section className="mb-12">
             <Card className="p-6">
               <h3 className="text-2xl font-bold mb-4">Select Your Favorite Design</h3>
