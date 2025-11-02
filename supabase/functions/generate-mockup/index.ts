@@ -90,7 +90,15 @@ Make each mockup unique in pose, angle, and setting while maintaining consistent
       throw new Error(`AI gateway error: ${response.status}`);
     }
 
-    const data = await response.json();
+    let data;
+    try {
+      const responseText = await response.text();
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      throw new Error("Failed to parse AI response - image too large or malformed");
+    }
+    
     const mockupUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
     if (!mockupUrl) {
