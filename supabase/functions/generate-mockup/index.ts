@@ -116,10 +116,19 @@ serve(async (req) => {
       throw new Error("Failed to parse AI response - image too large or malformed");
     }
     
+    // Log the full response for debugging
+    console.log("AI Response structure:", JSON.stringify(data, null, 2));
+    
     const mockupUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
     if (!mockupUrl) {
-      throw new Error("No mockup generated");
+      console.error("No mockup URL found in response. Full data:", JSON.stringify(data));
+      console.error("Message content:", data.choices?.[0]?.message?.content);
+      console.error("Images array:", data.choices?.[0]?.message?.images);
+      
+      // Check if there's an error message from the AI
+      const errorMessage = data.choices?.[0]?.message?.content || data.error?.message || "No mockup generated";
+      throw new Error(`AI did not generate mockup image: ${errorMessage}`);
     }
 
     console.log("Mockup generated successfully");
