@@ -105,12 +105,36 @@ const Index = () => {
   ];
 
   const designConceptOptions = [
-    { id: "minimalist", name: "Minimalist", desc: "Clean and simple" },
-    { id: "ornate", name: "Ornate", desc: "Detailed & decorative" },
-    { id: "modern-fusion", name: "Modern Fusion", desc: "Contemporary blend" },
-    { id: "traditional", name: "Traditional", desc: "Classic heritage" },
-    { id: "geometric", name: "Geometric", desc: "Clean patterns" },
-    { id: "abstract", name: "Abstract", desc: "Artistic freedom" },
+    { 
+      id: "minimalist-vector", 
+      name: "Minimalist Vector", 
+      desc: "Clean silhouettes & simple shapes",
+      example: "Like Jesus tree or dog designs"
+    },
+    { 
+      id: "detailed-illustration", 
+      name: "Detailed Illustration", 
+      desc: "Highly detailed, photorealistic",
+      example: "Like book stack or gnome truck"
+    },
+    { 
+      id: "typography-art", 
+      name: "Typography Art", 
+      desc: "Creative text-focused designs",
+      example: "Like 'Bark the Herald' design"
+    },
+    { 
+      id: "quirky-humorous", 
+      name: "Quirky & Fun", 
+      desc: "Playful, personality-driven",
+      example: "Like festive skeleton design"
+    },
+    { 
+      id: "line-art", 
+      name: "Simple Line Art", 
+      desc: "Clean line drawings, minimal colors",
+      example: "Clean, modern outline style"
+    },
   ];
 
   const handleGenerateDesigns = async () => {
