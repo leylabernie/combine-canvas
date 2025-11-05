@@ -91,7 +91,7 @@ serve(async (req) => {
   }
 
   try {
-    const { selections } = await req.json();
+    const { selections, variationIndex = 0 } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -116,7 +116,15 @@ serve(async (req) => {
     const selectedStyleName = designConcepts[0] || "Minimalist Vector";
     const selectedStyleId = styleNameToId[selectedStyleName] || "minimalist-vector";
 
-    const prompt = getStylePrompt(selectedStyleId, inspirations, productTypes, colorSchemes);
+    // Add variation instruction for compositional diversity
+    const variationSuffixes = [
+      "",
+      "\n\nIMPORTANT VARIATION: Create a different compositional layout, angle, or arrangement compared to a standard centered view. Try a diagonal composition, off-center placement, or unique perspective.",
+      "\n\nIMPORTANT VARIATION: Use alternative color emphasis, scale variation, or creative element arrangement for maximum diversity. Try a bold scale contrast or unexpected color distribution."
+    ];
+
+    const basePrompt = getStylePrompt(selectedStyleId, inspirations, productTypes, colorSchemes);
+    const prompt = basePrompt + variationSuffixes[variationIndex];
 
     console.log("Generating design with style:", selectedStyleId);
     console.log("Full prompt:", prompt);

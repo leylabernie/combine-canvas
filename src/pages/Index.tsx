@@ -23,9 +23,9 @@ const Index = () => {
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [designVariations, setDesignVariations] = useState<string[]>([]);
-  const [selectedDesign, setSelectedDesign] = useState<string | null>(null);
+  const [selectedDesigns, setSelectedDesigns] = useState<string[]>([]);
   const [mockupVariations, setMockupVariations] = useState<string[]>([]);
-  const [selectedMockup, setSelectedMockup] = useState<string | null>(null);
+  const [selectedMockups, setSelectedMockups] = useState<string[]>([]);
   const [generatedListing, setGeneratedListing] = useState<any>(null);
 
   const toggleSelection = (category: keyof Selection, value: string) => {
@@ -44,6 +44,38 @@ const Index = () => {
       colorSchemes: [],
       designConcepts: [],
     });
+  };
+
+  const toggleDesignSelection = (designUrl: string) => {
+    setSelectedDesigns(prev => 
+      prev.includes(designUrl)
+        ? prev.filter(url => url !== designUrl)
+        : [...prev, designUrl]
+    );
+  };
+
+  const toggleMockupSelection = (mockupUrl: string) => {
+    setSelectedMockups(prev => 
+      prev.includes(mockupUrl)
+        ? prev.filter(url => url !== mockupUrl)
+        : [...prev, mockupUrl]
+    );
+  };
+
+  const selectAllDesigns = () => {
+    setSelectedDesigns([...designVariations]);
+  };
+
+  const deselectAllDesigns = () => {
+    setSelectedDesigns([]);
+  };
+
+  const selectAllMockups = () => {
+    setSelectedMockups([...mockupVariations]);
+  };
+
+  const deselectAllMockups = () => {
+    setSelectedMockups([]);
   };
 
   const hasSelections = Object.values(selections).some((arr) => arr.length > 0);
@@ -145,17 +177,21 @@ const Index = () => {
 
     setIsGenerating(true);
     setDesignVariations([]);
-    setSelectedDesign(null);
+    setSelectedDesigns([]);
     setMockupVariations([]);
-    setSelectedMockup(null);
+    setSelectedMockups([]);
     setGeneratedListing(null);
     
     try {
-      toast.info("Generating 3 design variations...");
+      toast.info("Generating 3 design variations with different compositions...");
       
-      const promises = Array(3).fill(null).map(() => 
+      // Generate 3 variations with different compositional layouts
+      const promises = Array(3).fill(null).map((_, variationIndex) => 
         supabase.functions.invoke("generate-design-png", {
-          body: { selections },
+          body: { 
+            selections,
+            variationIndex // Pass variation index for compositional diversity
+          },
         })
       );
       
@@ -177,7 +213,7 @@ const Index = () => {
       }
 
       setDesignVariations(imageUrls);
-      toast.success(`${imageUrls.length} design variations generated!`);
+      toast.success(`${imageUrls.length} design variations generated with unique compositions!`);
     } catch (error: any) {
       console.error("Error generating designs:", error);
       toast.error(error.message || "Failed to generate designs");
@@ -187,48 +223,57 @@ const Index = () => {
   };
 
   const handleGenerateMockups = async () => {
-    if (!selectedDesign) return;
-    
+    if (selectedDesigns.length === 0) {
+      toast.error("Please select at least one design first");
+      return;
+    }
+
     setIsGenerating(true);
     setMockupVariations([]);
-    setSelectedMockup(null);
-    setGeneratedListing(null);
-    
-    try {
-      const mockups: string[] = [];
-      
-      // Generate 10 mockups sequentially with progress updates
-      for (let i = 0; i < 10; i++) {
-        toast.info(`Generating 8K mockup ${i + 1} of 10...`);
-        
-        const { data, error } = await supabase.functions.invoke("generate-mockup", {
-          body: { 
-            selections, 
-            imageUrl: selectedDesign,
-            promptIndex: i
-          },
-        });
+    setSelectedMockups([]);
+    const allMockups: string[] = [];
 
-        if (error) {
-          console.error(`Error generating mockup ${i + 1}:`, error);
-          if (error.message?.includes("Payment required")) {
-            toast.error("Out of credits. Please add credits to your Lovable workspace in Settings → Usage.");
-            break;
-          } else if (error.message?.includes("Rate limit")) {
-            toast.error("Rate limit exceeded. Please wait and try again.");
-            break;
-          }
-          continue;
-        }
+    try {
+      // Generate 10 mockups for EACH selected design
+      for (let designIndex = 0; designIndex < selectedDesigns.length; designIndex++) {
+        const designUrl = selectedDesigns[designIndex];
+        toast.info(`Generating mockups for design ${designIndex + 1}/${selectedDesigns.length}...`);
         
-        if (data?.mockupUrl) {
-          mockups.push(data.mockupUrl);
-          setMockupVariations([...mockups]); // Update UI progressively
+        // Generate 10 mockups for this design
+        for (let i = 0; i < 10; i++) {
+          toast.info(`Mockup ${i + 1}/10 for design ${designIndex + 1}/${selectedDesigns.length}...`);
+          
+          const { data, error } = await supabase.functions.invoke("generate-mockup", {
+            body: { 
+              selections, 
+              imageUrl: designUrl,
+              promptIndex: i
+            },
+          });
+
+          if (error) {
+            console.error(`Error generating mockup ${i + 1} for design ${designIndex + 1}:`, error);
+            if (error.message?.includes("Payment required")) {
+              toast.error("Out of credits. Please add credits to your Lovable workspace in Settings → Usage.");
+              setIsGenerating(false);
+              return;
+            } else if (error.message?.includes("Rate limit")) {
+              toast.error("Rate limit exceeded. Please wait and try again.");
+              setIsGenerating(false);
+              return;
+            }
+            continue;
+          }
+          
+          if (data?.mockupUrl) {
+            allMockups.push(data.mockupUrl);
+            setMockupVariations([...allMockups]); // Update UI progressively
+          }
         }
       }
 
-      if (mockups.length > 0) {
-        toast.success(`Successfully generated ${mockups.length} 8K mockups!`);
+      if (allMockups.length > 0) {
+        toast.success(`Successfully generated ${allMockups.length} total mockups for ${selectedDesigns.length} design(s)!`);
       } else {
         toast.error("No mockups were generated");
       }
@@ -241,6 +286,11 @@ const Index = () => {
   };
 
   const handleGenerateListing = async () => {
+    if (selectedMockups.length === 0) {
+      toast.error("Please select at least one mockup first");
+      return;
+    }
+    
     setIsGenerating(true);
     try {
       toast.info("Generating SEO-optimized listing...");
@@ -277,6 +327,7 @@ const Index = () => {
     }
 
     try {
+      toast.info("Creating export package...");
       const zip = new JSZip();
 
       // Add listing data as JSON
@@ -287,25 +338,38 @@ const Index = () => {
         tags: generatedListing.tags,
         priceRange: generatedListing.priceRange,
         selections: selections,
+        designCount: selectedDesigns.length,
+        mockupCount: selectedMockups.length,
         exportedAt: new Date().toISOString(),
       };
       zip.file('listing.json', JSON.stringify(listingData, null, 2));
 
-      // Add selected design if available
-      if (selectedDesign) {
-        const pngResponse = await fetch(selectedDesign);
-        const pngBlob = await pngResponse.blob();
-        zip.file('design.png', pngBlob);
+      // Create folders for organization
+      const designsFolder = zip.folder('designs');
+      const mockupsFolder = zip.folder('mockups');
+
+      // Add all selected designs
+      if (selectedDesigns.length > 0 && designsFolder) {
+        for (let i = 0; i < selectedDesigns.length; i++) {
+          toast.info(`Adding design ${i + 1}/${selectedDesigns.length} to export...`);
+          const response = await fetch(selectedDesigns[i]);
+          const blob = await response.blob();
+          designsFolder.file(`design-${i + 1}.png`, blob);
+        }
       }
 
-      // Add selected mockup if available
-      if (selectedMockup) {
-        const mockupResponse = await fetch(selectedMockup);
-        const mockupBlob = await mockupResponse.blob();
-        zip.file('mockup.png', mockupBlob);
+      // Add all selected mockups
+      if (selectedMockups.length > 0 && mockupsFolder) {
+        for (let i = 0; i < selectedMockups.length; i++) {
+          toast.info(`Adding mockup ${i + 1}/${selectedMockups.length} to export...`);
+          const response = await fetch(selectedMockups[i]);
+          const blob = await response.blob();
+          mockupsFolder.file(`mockup-${i + 1}.png`, blob);
+        }
       }
 
       // Generate and download ZIP
+      toast.info("Compressing files...");
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
@@ -313,7 +377,7 @@ const Index = () => {
       a.download = `product-listing-${Date.now()}.zip`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Listing exported as ZIP successfully!");
+      toast.success(`Exported ${selectedDesigns.length} designs & ${selectedMockups.length} mockups successfully!`);
     } catch (error) {
       console.error("Error creating ZIP:", error);
       toast.error("Failed to export listing");
@@ -327,7 +391,6 @@ const Index = () => {
     a.download = `${prefix}-${Date.now()}.png`;
     a.click();
   };
-
 
 
   return (
@@ -541,23 +604,48 @@ const Index = () => {
           </section>
         )}
 
-        {/* Design Variations Gallery - Only show if mockups not generated yet */}
-        {designVariations.length > 0 && !isGenerating && mockupVariations.length === 0 && (
+        {/* Design Variations Gallery - With multiple selection */}
+        {designVariations.length > 0 && !isGenerating && (
           <section className="mb-12">
             <Card className="p-6">
-              <h3 className="text-2xl font-bold mb-4">Select Your Favorite Design</h3>
-              <p className="text-muted-foreground mb-6">Choose one design to create mockup variations</p>
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h3 className="text-2xl font-bold">Select Your Favorite Designs</h3>
+                  <p className="text-muted-foreground">
+                    {selectedDesigns.length > 0 
+                      ? `${selectedDesigns.length} design${selectedDesigns.length > 1 ? 's' : ''} selected`
+                      : "Choose one or more designs to create mockups"
+                    }
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={selectAllDesigns}>
+                    Select All
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={deselectAllDesigns}>
+                    Deselect All
+                  </Button>
+                </div>
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {designVariations.map((imageUrl, index) => (
                   <div
                     key={index}
-                    className={`cursor-pointer rounded-lg border-4 transition-all hover:shadow-xl ${
-                      selectedDesign === imageUrl
+                    className={`cursor-pointer rounded-lg border-4 transition-all hover:shadow-xl relative ${
+                      selectedDesigns.includes(imageUrl)
                         ? "border-primary shadow-lg"
                         : "border-transparent hover:border-primary/50"
                     }`}
-                    onClick={() => setSelectedDesign(imageUrl)}
+                    onClick={() => toggleDesignSelection(imageUrl)}
                   >
+                    {selectedDesigns.includes(imageUrl) && (
+                      <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-2 z-10">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
                     <div className="bg-checkerboard rounded-lg p-4">
                       <img
                         src={imageUrl}
@@ -567,21 +655,22 @@ const Index = () => {
                     </div>
                     <div className="text-center p-3">
                       <p className="font-semibold">Design {index + 1}</p>
-                      {selectedDesign === imageUrl && (
-                        <Badge className="mt-2">Selected</Badge>
-                      )}
                     </div>
                   </div>
                 ))}
               </div>
-              {selectedDesign && (
+              
+              {selectedDesigns.length > 0 && (
                 <div className="mt-6 text-center">
                   <Button 
                     onClick={handleGenerateMockups} 
                     disabled={isGenerating}
                     size="lg"
                   >
-                    {isGenerating ? "Generating..." : "Generate 7 Mockup Variations"}
+                    {isGenerating 
+                      ? "Generating..." 
+                      : `Generate Mockups for ${selectedDesigns.length} Design${selectedDesigns.length > 1 ? 's' : ''}`
+                    }
                   </Button>
                 </div>
               )}
@@ -589,23 +678,48 @@ const Index = () => {
           </section>
         )}
 
-        {/* Mockup Variations Gallery */}
+        {/* Mockup Variations Gallery - With multiple selection */}
         {mockupVariations.length > 0 && (
           <section className="mb-12">
             <Card className="p-6">
-              <h3 className="text-2xl font-bold mb-4">Select Your Favorite Mockup</h3>
-              <p className="text-muted-foreground mb-6">Choose one mockup to create the final listing</p>
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h3 className="text-2xl font-bold">Select Your Favorite Mockups</h3>
+                  <p className="text-muted-foreground">
+                    {selectedMockups.length > 0 
+                      ? `${selectedMockups.length} mockup${selectedMockups.length > 1 ? 's' : ''} selected`
+                      : "Choose one or more mockups for the final listing"
+                    }
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={selectAllMockups}>
+                    Select All
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={deselectAllMockups}>
+                    Deselect All
+                  </Button>
+                </div>
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {mockupVariations.map((mockupUrl, index) => (
                   <div
                     key={index}
-                    className={`cursor-pointer rounded-lg border-4 transition-all hover:shadow-xl ${
-                      selectedMockup === mockupUrl
+                    className={`cursor-pointer rounded-lg border-4 transition-all hover:shadow-xl relative ${
+                      selectedMockups.includes(mockupUrl)
                         ? "border-primary shadow-lg"
                         : "border-transparent hover:border-primary/50"
                     }`}
-                    onClick={() => setSelectedMockup(mockupUrl)}
+                    onClick={() => toggleMockupSelection(mockupUrl)}
                   >
+                    {selectedMockups.includes(mockupUrl) && (
+                      <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-2 z-10">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
                     <div className="bg-muted/30 rounded-lg p-4">
                       <img
                         src={mockupUrl}
@@ -615,21 +729,22 @@ const Index = () => {
                     </div>
                     <div className="text-center p-3">
                       <p className="font-semibold">Mockup {index + 1}</p>
-                      {selectedMockup === mockupUrl && (
-                        <Badge className="mt-2">Selected</Badge>
-                      )}
                     </div>
                   </div>
                 ))}
               </div>
-              {selectedMockup && (
+              
+              {selectedMockups.length > 0 && (
                 <div className="mt-6 text-center">
                   <Button 
                     onClick={handleGenerateListing} 
                     disabled={isGenerating}
                     size="lg"
                   >
-                    {isGenerating ? "Generating..." : "Generate Full Listing"}
+                    {isGenerating 
+                      ? "Generating..." 
+                      : `Generate Listing with ${selectedMockups.length} Mockup${selectedMockups.length > 1 ? 's' : ''}`
+                    }
                   </Button>
                 </div>
               )}
@@ -642,33 +757,59 @@ const Index = () => {
         {generatedListing && (
           <>
             <div className="space-y-8 mb-12">
-              <Card className="p-6">
-                <h3 className="text-2xl font-bold mb-4">Selected Design</h3>
-                <div className="bg-checkerboard rounded-lg p-4 mb-4">
-                  <img
-                    src={selectedDesign || ''}
-                    alt="Selected design"
-                    className="max-w-sm h-auto mx-auto"
-                  />
-                </div>
-                <Button onClick={() => downloadImage(selectedDesign || '', 'design')} className="w-full">
-                  Download Design PNG
-                </Button>
-              </Card>
+              {/* Selected Designs Gallery */}
+              {selectedDesigns.length > 0 && (
+                <Card className="p-6">
+                  <h3 className="text-2xl font-bold mb-4">Selected Designs ({selectedDesigns.length})</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+                    {selectedDesigns.map((designUrl, index) => (
+                      <div key={index} className="space-y-2">
+                        <div className="bg-checkerboard rounded-lg p-4">
+                          <img
+                            src={designUrl}
+                            alt={`Selected design ${index + 1}`}
+                            className="w-full h-auto mx-auto"
+                          />
+                        </div>
+                        <Button 
+                          onClick={() => downloadImage(designUrl, `design-${index + 1}`)} 
+                          className="w-full"
+                          variant="outline"
+                        >
+                          Download Design {index + 1}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
 
-              <Card className="p-6">
-                <h3 className="text-2xl font-bold mb-4">Selected Mockup</h3>
-                <div className="rounded-lg p-4 mb-4 bg-muted/30">
-                  <img
-                    src={selectedMockup || ''}
-                    alt="Selected mockup"
-                    className="max-w-sm h-auto mx-auto"
-                  />
-                </div>
-                <Button onClick={() => downloadImage(selectedMockup || '', 'mockup')} className="w-full">
-                  Download Mockup
-                </Button>
-              </Card>
+              {/* Selected Mockups Gallery */}
+              {selectedMockups.length > 0 && (
+                <Card className="p-6">
+                  <h3 className="text-2xl font-bold mb-4">Selected Mockups ({selectedMockups.length})</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-4">
+                    {selectedMockups.map((mockupUrl, index) => (
+                      <div key={index} className="space-y-2">
+                        <div className="rounded-lg p-4 bg-muted/30">
+                          <img
+                            src={mockupUrl}
+                            alt={`Selected mockup ${index + 1}`}
+                            className="w-full h-auto mx-auto"
+                          />
+                        </div>
+                        <Button 
+                          onClick={() => downloadImage(mockupUrl, `mockup-${index + 1}`)} 
+                          className="w-full"
+                          variant="outline"
+                        >
+                          Download Mockup {index + 1}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
             </div>
 
             <Card className="p-6">
