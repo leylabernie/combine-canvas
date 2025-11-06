@@ -1,3 +1,4 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -12,10 +13,10 @@ serve(async (req) => {
 
   try {
     const { selections, imageUrl, promptIndex = 0 } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (!OPENAI_API_KEY) {
+      throw new Error("OPENAI_API_KEY is not configured");
     }
 
     const productType = selections.productTypes?.[0] || "mug";
@@ -58,14 +59,14 @@ serve(async (req) => {
 
     console.log("Generating mockup with prompt:", prompt);
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
+        model: "gpt-4o",
         messages: [
           {
             role: "user",
@@ -83,53 +84,58 @@ serve(async (req) => {
             ]
           }
         ],
-        modalities: ["image", "text"]
+        max_tokens: 4096
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Payment required. Please add credits to your Lovable workspace." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      throw new Error(`AI gateway error: ${response.status}`);
+      console.error("OpenAI API error:", response.status, errorText);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
-    let data;
-    try {
-      const responseText = await response.text();
-      data = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error("JSON parse error:", parseError);
-      throw new Error("Failed to parse AI response - image too large or malformed");
+    const data = await response.json();
+    
+    // OpenAI doesn't generate images in chat completions - we need to use a different approach
+    // Let's use the description to generate a new image with the design incorporated
+    const description = data.choices?.[0]?.message?.content;
+    
+    if (!description) {
+      throw new Error("No description generated");
     }
-    
-    // Log the full response for debugging
-    console.log("AI Response structure:", JSON.stringify(data, null, 2));
-    
-    const mockupUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
-    if (!mockupUrl) {
-      console.error("No mockup URL found in response. Full data:", JSON.stringify(data));
-      console.error("Message content:", data.choices?.[0]?.message?.content);
-      console.error("Images array:", data.choices?.[0]?.message?.images);
-      
-      // Check if there's an error message from the AI
-      const errorMessage = data.choices?.[0]?.message?.content || data.error?.message || "No mockup generated";
-      throw new Error(`AI did not generate mockup image: ${errorMessage}`);
+    console.log("Generated description:", description);
+
+    // Now generate the mockup image using DALL-E with the description
+    const imageGenResponse = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-image-1",
+        prompt: `${prompt}. Incorporate this design: ${description}`,
+        n: 1,
+        size: "1024x1024",
+        quality: "high"
+      }),
+    });
+
+    if (!imageGenResponse.ok) {
+      const errorText = await imageGenResponse.text();
+      console.error("OpenAI image generation error:", imageGenResponse.status, errorText);
+      throw new Error(`OpenAI image generation error: ${imageGenResponse.status}`);
     }
+
+    const imageData = await imageGenResponse.json();
+    const base64Mockup = imageData.data?.[0]?.b64_json;
+
+    if (!base64Mockup) {
+      throw new Error("No mockup generated");
+    }
+
+    const mockupUrl = `data:image/png;base64,${base64Mockup}`;
 
     console.log("Mockup generated successfully");
 
