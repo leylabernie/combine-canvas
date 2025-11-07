@@ -81,9 +81,28 @@ const Index = () => {
   const hasSelections = Object.values(selections).some((arr) => arr.length > 0);
 
   const inspirationOptions = [
+    // Upcoming Holidays 2025
+    { id: "new-year", emoji: "🎆", name: "New Year 2025", desc: "Fresh beginnings" },
+    { id: "valentines", emoji: "💝", name: "Valentine's Day", desc: "Love & romance" },
+    { id: "st-patricks", emoji: "☘️", name: "St. Patrick's Day", desc: "Irish luck" },
+    { id: "easter", emoji: "🐰", name: "Easter", desc: "Spring celebration" },
+    { id: "earth-day", emoji: "🌍", name: "Earth Day", desc: "Environmental awareness" },
+    { id: "mothers-day", emoji: "👩", name: "Mother's Day", desc: "Honoring mothers" },
+    { id: "memorial-day", emoji: "🇺🇸", name: "Memorial Day", desc: "Remembrance" },
+    { id: "fathers-day", emoji: "👨", name: "Father's Day", desc: "Celebrating dads" },
+    { id: "independence-day", emoji: "🎆", name: "4th of July", desc: "Independence" },
+    { id: "halloween", emoji: "🎃", name: "Halloween", desc: "Spooky season" },
+    { id: "thanksgiving", emoji: "🦃", name: "Thanksgiving", desc: "Gratitude & harvest" },
+    { id: "christmas", emoji: "🎄", name: "Christmas", desc: "Holiday Spirit" },
+    { id: "hanukkah", emoji: "🕎", name: "Hanukkah", desc: "Festival of Lights" },
+    
+    // Cultural & Festivals
     { id: "diwali", emoji: "🪔", name: "Diwali", desc: "Festival of Lights" },
     { id: "holi", emoji: "🎨", name: "Holi", desc: "Festival of Colors" },
-    { id: "christmas", emoji: "🎄", name: "Christmas", desc: "Holiday Spirit" },
+    { id: "lunar-new-year", emoji: "🧧", name: "Lunar New Year", desc: "Asian celebration" },
+    { id: "cinco-de-mayo", emoji: "🌮", name: "Cinco de Mayo", desc: "Mexican heritage" },
+    
+    // Themes
     { id: "rangoli", emoji: "✨", name: "Rangoli", desc: "Colorful floor art" },
     { id: "mandala", emoji: "✼", name: "Mandala", desc: "Sacred geometry" },
     { id: "lotus", emoji: "🪷", name: "Lotus", desc: "Sacred flower" },
@@ -95,6 +114,10 @@ const Index = () => {
     { id: "geometric", emoji: "◇", name: "Geometric", desc: "Modern patterns" },
     { id: "floral", emoji: "🌸", name: "Floral", desc: "Botanical beauty" },
     { id: "celestial", emoji: "⭐", name: "Celestial", desc: "Stars & Moon" },
+    { id: "tropical", emoji: "🌺", name: "Tropical", desc: "Island vibes" },
+    { id: "vintage", emoji: "📻", name: "Vintage", desc: "Retro aesthetics" },
+    { id: "boho", emoji: "🌙", name: "Bohemian", desc: "Free-spirited" },
+    { id: "nautical", emoji: "⚓", name: "Nautical", desc: "Ocean & ships" },
   ];
 
   const productTypeOptions = [
@@ -104,24 +127,55 @@ const Index = () => {
       { id: "wall-art", emoji: "🖼️", name: "Wall Art", desc: "Framed pieces" },
       { id: "poster", emoji: "📜", name: "Poster", desc: "Prints & posters" },
       { id: "candle", emoji: "🕯️", name: "Candle Holder", desc: "Light fixtures" },
+      { id: "garland", emoji: "🎀", name: "Garland", desc: "Hanging decorations" },
+      { id: "banner", emoji: "🎊", name: "Banner", desc: "Celebration banners" },
+      { id: "table-runner", emoji: "🏛️", name: "Table Runner", desc: "Table decor" },
     ]},
     { category: "Kitchenware", items: [
       { id: "mug", emoji: "☕", name: "Mug", desc: "Coffee & tea" },
+      { id: "wine-glass", emoji: "🍷", name: "Wine Glass", desc: "Drinkware" },
+      { id: "coaster", emoji: "☕", name: "Coaster", desc: "Drink coasters" },
+      { id: "cutting-board", emoji: "🔪", name: "Cutting Board", desc: "Kitchen tools" },
+      { id: "apron", emoji: "👨‍🍳", name: "Apron", desc: "Cooking apparel" },
+      { id: "dish-towel", emoji: "🧽", name: "Dish Towel", desc: "Kitchen textiles" },
     ]},
     { category: "Apparel", items: [
       { id: "tshirt", emoji: "👕", name: "T-Shirt", desc: "Clothing" },
+      { id: "hoodie", emoji: "🧥", name: "Hoodie", desc: "Sweatshirts" },
+      { id: "tank-top", emoji: "🎽", name: "Tank Top", desc: "Sleeveless" },
+      { id: "sweatshirt", emoji: "👔", name: "Sweatshirt", desc: "Casual wear" },
+      { id: "hat", emoji: "🧢", name: "Hat", desc: "Headwear" },
+      { id: "socks", emoji: "🧦", name: "Socks", desc: "Footwear" },
     ]},
     { category: "Home", items: [
       { id: "pillow", emoji: "🛋️", name: "Throw Pillow", desc: "Cushions" },
+      { id: "blanket", emoji: "🛏️", name: "Throw Blanket", desc: "Cozy blankets" },
+      { id: "doormat", emoji: "🚪", name: "Doormat", desc: "Welcome mats" },
+      { id: "shower-curtain", emoji: "🚿", name: "Shower Curtain", desc: "Bathroom decor" },
+      { id: "tapestry", emoji: "🎨", name: "Tapestry", desc: "Wall hangings" },
     ]},
     { category: "Accessories", items: [
       { id: "tote", emoji: "👜", name: "Tote Bag", desc: "Bags" },
       { id: "sticker", emoji: "✨", name: "Sticker", desc: "Vinyl stickers" },
       { id: "phone", emoji: "📱", name: "Phone Case", desc: "Device covers" },
+      { id: "keychain", emoji: "🔑", name: "Keychain", desc: "Key accessories" },
+      { id: "pin", emoji: "📌", name: "Enamel Pin", desc: "Collectible pins" },
+      { id: "magnet", emoji: "🧲", name: "Magnet", desc: "Fridge magnets" },
+      { id: "patch", emoji: "🎖️", name: "Patch", desc: "Iron-on patches" },
     ]},
     { category: "Stationery", items: [
       { id: "notebook", emoji: "📓", name: "Notebook", desc: "Journals" },
       { id: "card", emoji: "💌", name: "Greeting Card", desc: "Holiday cards" },
+      { id: "calendar", emoji: "📅", name: "Calendar", desc: "Wall calendars" },
+      { id: "bookmark", emoji: "🔖", name: "Bookmark", desc: "Reading markers" },
+      { id: "planner", emoji: "📔", name: "Planner", desc: "Organizers" },
+      { id: "pen", emoji: "🖊️", name: "Pen", desc: "Writing tools" },
+    ]},
+    { category: "Tech", items: [
+      { id: "laptop-sleeve", emoji: "💻", name: "Laptop Sleeve", desc: "Device protection" },
+      { id: "mouse-pad", emoji: "🖱️", name: "Mouse Pad", desc: "Desk accessories" },
+      { id: "phone-wallet", emoji: "💳", name: "Phone Wallet", desc: "Card holders" },
+      { id: "airpod-case", emoji: "🎧", name: "AirPod Case", desc: "Earbud protection" },
     ]},
   ];
 
@@ -134,6 +188,19 @@ const Index = () => {
     { id: "elegant-gold", name: "Elegant Gold", colors: ["#C9A227", "#FFD700", "#FFF8DC"] },
     { id: "pastel-dream", name: "Pastel Dream", colors: ["#FFB3BA", "#BAFFC9", "#BAE1FF"] },
     { id: "monochrome", name: "Monochrome", colors: ["#1A1A1A", "#757575", "#E0E0E0"] },
+    { id: "rose-gold", name: "Rose Gold", colors: ["#B76E79", "#E8C4C8", "#F4E4E6"] },
+    { id: "mint-fresh", name: "Mint Fresh", colors: ["#00B8A9", "#5FD3C1", "#C8F4EE"] },
+    { id: "lavender-fields", name: "Lavender Fields", colors: ["#9B59B6", "#C39BD3", "#E8DAEF"] },
+    { id: "autumn-spice", name: "Autumn Spice", colors: ["#D2691E", "#E89C5C", "#F5DEB3"] },
+    { id: "peachy-keen", name: "Peachy Keen", colors: ["#FF9A8B", "#FFBB96", "#FFE5D9"] },
+    { id: "navy-blue", name: "Navy Blue", colors: ["#003366", "#4A7BA7", "#A8D0E6"] },
+    { id: "cherry-blossom", name: "Cherry Blossom", colors: ["#FFB7C5", "#FFC9D4", "#FFE4E9"] },
+    { id: "sage-green", name: "Sage Green", colors: ["#8A9A5B", "#B5C99A", "#E1ECC8"] },
+    { id: "coral-reef", name: "Coral Reef", colors: ["#FF6F61", "#FF8B7B", "#FFB5A7"] },
+    { id: "midnight-sky", name: "Midnight Sky", colors: ["#191970", "#4169E1", "#87CEEB"] },
+    { id: "champagne-gold", name: "Champagne Gold", colors: ["#F7E7CE", "#E6D5AC", "#D4C4A8"] },
+    { id: "berry-fusion", name: "Berry Fusion", colors: ["#8E44AD", "#C0392B", "#E74C3C"] },
+    { id: "turquoise-wave", name: "Turquoise Wave", colors: ["#1ABC9C", "#48C9B0", "#76D7C4"] },
   ];
 
   const designConceptOptions = [
@@ -157,7 +224,7 @@ const Index = () => {
     },
     { 
       id: "quirky-humorous", 
-      name: "Quirky & Fun", 
+      name: "Quirky & Humorous", 
       desc: "Playful, personality-driven",
       example: "Like festive skeleton design"
     },
@@ -167,14 +234,63 @@ const Index = () => {
       desc: "Clean line drawings, minimal colors",
       example: "Clean, modern outline style"
     },
+    { 
+      id: "whimsical", 
+      name: "Whimsical", 
+      desc: "Dreamy, magical, fantastical",
+      example: "Fairy tale and enchanted themes"
+    },
+    { 
+      id: "cartoon", 
+      name: "Cartoon", 
+      desc: "Fun, animated character style",
+      example: "Bold outlines and expressive features"
+    },
+    { 
+      id: "flat-vector", 
+      name: "Flat Vector", 
+      desc: "Modern, geometric, bold colors",
+      example: "Material design aesthetic"
+    },
+    { 
+      id: "watercolor", 
+      name: "Watercolor", 
+      desc: "Soft, artistic, painterly",
+      example: "Flowing colors and textures"
+    },
+    { 
+      id: "retro-vintage", 
+      name: "Retro Vintage", 
+      desc: "Classic, nostalgic aesthetics",
+      example: "50s-80s inspired designs"
+    },
+    { 
+      id: "hand-drawn", 
+      name: "Hand Drawn", 
+      desc: "Sketchy, organic, authentic",
+      example: "Pencil or ink illustration style"
+    },
+    { 
+      id: "3d-render", 
+      name: "3D Render", 
+      desc: "Dimensional, realistic depth",
+      example: "Modern 3D graphics"
+    },
+    { 
+      id: "abstract", 
+      name: "Abstract", 
+      desc: "Non-representational, artistic",
+      example: "Shapes, patterns, and colors"
+    },
+    { 
+      id: "pixel-art", 
+      name: "Pixel Art", 
+      desc: "8-bit, retro gaming style",
+      example: "Blocky, nostalgic graphics"
+    },
   ];
 
   const handleGenerateDesigns = async () => {
-    if (!hasSelections) {
-      toast.error("Please make at least one selection");
-      return;
-    }
-
     setIsGenerating(true);
     setDesignVariations([]);
     setSelectedDesigns([]);
@@ -183,14 +299,26 @@ const Index = () => {
     setGeneratedListing(null);
     
     try {
-      toast.info("Generating 3 design variations with different compositions...");
+      const effectiveSelections = hasSelections ? selections : {
+        inspirations: [],
+        productTypes: [],
+        colorSchemes: [],
+        designConcepts: []
+      };
+      
+      if (!hasSelections) {
+        toast.info("No selections made - generating best design ideas for you!");
+      } else {
+        toast.info("Generating 3 design variations with different compositions...");
+      }
       
       // Generate 3 variations with different compositional layouts
       const promises = Array(3).fill(null).map((_, variationIndex) => 
         supabase.functions.invoke("generate-design-png", {
           body: { 
-            selections,
-            variationIndex // Pass variation index for compositional diversity
+            selections: effectiveSelections,
+            variationIndex, // Pass variation index for compositional diversity
+            autoGenerate: !hasSelections // Flag for AI to choose best options
           },
         })
       );
