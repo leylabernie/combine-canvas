@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,10 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import JSZip from "jszip";
+import { User, Session } from "@supabase/supabase-js";
+import { AuthForm } from "@/components/AuthForm";
+import { FavoritesSection } from "@/components/FavoritesSection";
+import { Heart, Sparkles, LogOut } from "lucide-react";
 
 interface Selection {
   inspirations: string[];
@@ -15,6 +19,10 @@ interface Selection {
 }
 
 const Index = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [showAuthForm, setShowAuthForm] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
   const [selections, setSelections] = useState<Selection>({
     inspirations: [],
     productTypes: [],
@@ -27,6 +35,22 @@ const Index = () => {
   const [mockupVariations, setMockupVariations] = useState<string[]>([]);
   const [selectedMockups, setSelectedMockups] = useState<string[]>([]);
   const [generatedListing, setGeneratedListing] = useState<any>(null);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const toggleSelection = (category: keyof Selection, value: string) => {
     setSelections((prev) => ({
@@ -79,6 +103,49 @@ const Index = () => {
   };
 
   const hasSelections = Object.values(selections).some((arr) => arr.length > 0);
+
+  const handleSurpriseMe = () => {
+    const randomInspiration = inspirationOptions[Math.floor(Math.random() * inspirationOptions.length)];
+    const randomProductCategory = productTypeOptions[Math.floor(Math.random() * productTypeOptions.length)];
+    const randomProduct = randomProductCategory.items[Math.floor(Math.random() * randomProductCategory.items.length)];
+    const randomColor = colorSchemeOptions[Math.floor(Math.random() * colorSchemeOptions.length)];
+    const randomConcept = designConceptOptions[Math.floor(Math.random() * designConceptOptions.length)];
+
+    setSelections({
+      inspirations: [randomInspiration.name],
+      productTypes: [randomProduct.name],
+      colorSchemes: [randomColor.name],
+      designConcepts: [randomConcept.name],
+    });
+
+    toast.success("Surprise! Random selections made for you!");
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    toast.success("Signed out successfully");
+  };
+
+  const addToFavorites = async (designUrl: string, designType: string) => {
+    if (!user) {
+      setShowAuthForm(true);
+      toast.error("Please sign in to save favorites");
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from("favorites").insert({
+        user_id: user.id,
+        design_url: designUrl,
+        design_type: designType,
+      });
+
+      if (error) throw error;
+      toast.success("Added to favorites!");
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
 
   const inspirationOptions = [
     // Upcoming Holidays 2025
@@ -526,6 +593,24 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <header className="text-center mb-12">
+          <div className="flex justify-end gap-2 mb-6">
+            {user ? (
+              <>
+                <Button variant="outline" onClick={() => setShowFavorites(!showFavorites)}>
+                  <Heart className="h-4 w-4 mr-2" />
+                  My Favorites
+                </Button>
+                <Button variant="outline" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <Button variant="outline" onClick={() => setShowAuthForm(true)}>
+                Sign In
+              </Button>
+            )}
+          </div>
           <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             Product Design Studio
           </h1>
@@ -534,15 +619,28 @@ const Index = () => {
           </p>
         </header>
 
+        {/* Favorites Section */}
+        {showFavorites && user && (
+          <div className="mb-12">
+            <FavoritesSection />
+          </div>
+        )}
+
         {/* Summary Card */}
         <Card className="mb-12 p-6 bg-gradient-to-br from-card to-muted/30 border-2 shadow-lg">
           <div className="flex justify-between items-start mb-4">
             <h3 className="text-xl font-semibold">Your Design Summary</h3>
-            {hasSelections && (
-              <Button variant="outline" size="sm" onClick={clearAllSelections}>
-                Clear All
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleSurpriseMe}>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Surprise Me
               </Button>
-            )}
+              {hasSelections && (
+                <Button variant="outline" size="sm" onClick={clearAllSelections}>
+                  Clear All
+                </Button>
+              )}
+            </div>
           </div>
           
           {!hasSelections ? (
@@ -781,8 +879,18 @@ const Index = () => {
                         className="w-full h-auto mx-auto"
                       />
                     </div>
-                    <div className="text-center p-3">
+                    <div className="text-center p-3 flex items-center justify-between">
                       <p className="font-semibold">Design {index + 1}</p>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addToFavorites(imageUrl, 'design');
+                        }}
+                      >
+                        <Heart className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -855,8 +963,18 @@ const Index = () => {
                         className="w-full h-auto mx-auto"
                       />
                     </div>
-                    <div className="text-center p-3">
+                    <div className="text-center p-3 flex items-center justify-between">
                       <p className="font-semibold">Mockup {index + 1}</p>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addToFavorites(mockupUrl, 'mockup');
+                        }}
+                      >
+                        <Heart className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -991,6 +1109,13 @@ const Index = () => {
           </>
         )}
       </div>
+
+      {/* Auth Dialog */}
+      <Dialog open={showAuthForm} onOpenChange={setShowAuthForm}>
+        <DialogContent>
+          <AuthForm onSuccess={() => setShowAuthForm(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
