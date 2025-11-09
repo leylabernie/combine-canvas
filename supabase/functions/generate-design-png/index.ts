@@ -93,10 +93,10 @@ serve(async (req) => {
 
   try {
     const { selections, variationIndex = 0 } = await req.json();
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
-    if (!OPENAI_API_KEY) {
-      throw new Error("OPENAI_API_KEY is not configured");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     // Build prompt from selections
@@ -130,37 +130,36 @@ serve(async (req) => {
     console.log("Generating design with style:", selectedStyleId);
     console.log("Full prompt:", prompt);
 
-    const response = await fetch("https://api.openai.com/v1/images/generations", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-image-1",
-        prompt: prompt,
-        n: 1,
-        size: "1024x1024",
-        quality: "high",
-        background: "transparent",
-        output_format: "png"
+        model: "google/gemini-2.5-flash-image",
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        modalities: ["image", "text"]
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("OpenAI API error:", response.status, errorText);
-      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+      console.error("Lovable AI error:", response.status, errorText);
+      throw new Error(`Lovable AI error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    const base64Image = data.data?.[0]?.b64_json;
+    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
-    if (!base64Image) {
+    if (!imageUrl) {
       throw new Error("No image generated");
     }
-
-    const imageUrl = `data:image/png;base64,${base64Image}`;
 
     console.log("Design generated successfully");
 
